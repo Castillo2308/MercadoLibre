@@ -14,13 +14,14 @@
 
 ## 📖 Descripción General
 
-La aplicación MercadoLibre Clone implementa una arquitectura **Cliente-Servidor (CSR)** basada en componentes modernos de **React** y **Next.js**, con gestión de estado global escalable mediante **Zustand** y **Context API**.
+La aplicación MercadoLibre Clone implementa una arquitectura **Cliente-Servidor (CSR)** basada en componentes modernos de **React** y **Next.js**, con gestión de estado global escalable mediante **Zustand** y **Context API**, respaldada por **NeonDB** (PostgreSQL Serverless) como base de datos.
 
 La arquitectura está diseñada para ser:
-- ✅ **Escalable**: Fácil de agregar nuevas funcionalidades
-- ✅ **Mantenible**: Código limpio y bien organizado
-- ✅ **Performante**: Optimizada para carga rápida
-- ✅ **Type-Safe**: Tipado completo con TypeScript
+- ✅ **Escalable**: Fácil de agregar nuevas funcionalidades con auto-scaling en BD
+- ✅ **Mantenible**: Código limpio y bien organizado con Prisma ORM
+- ✅ **Performante**: Optimizada para carga rápida con caché y CDN
+- ✅ **Type-Safe**: Tipado completo con TypeScript en frontend y backend
+- ✅ **Serverless**: Infraestructura sin servidor con NeonDB y Vercel
 
 ---
 
@@ -234,61 +235,163 @@ LocalStorage sincroniza el carrito
 
 ## 📊 Diagrama de la Arquitectura
 
-### Representación Visual General
+### Representación Visual General - Client-Server Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                                                                  │
-│                     NAVEGADOR (CLIENTE)                         │
-│                                                                  │
-│  ┌────────────────────────────────────────────────────────────┐ │
-│  │                    Página React/Next.js                    │ │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │ │
-│  │  │  componentes │  │    hooks     │  │ page.tsx    │     │ │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘     │ │
-│  │          ↓                ↓                 ↓              │ │
-│  │  ┌────────────────────────────────────────────────────┐   │ │
-│  │  │        Estado Global (Context + Zustand)          │   │ │
-│  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │   │ │
-│  │  │  │ Auth     │  │ Cart     │  │ Favorites│         │   │ │
-│  │  │  └──────────┘  └──────────┘  └──────────┘         │   │ │
-│  │  └────────────────────────────────────────────────────┘   │ │
-│  │          ↓                                                 │ │
-│  │  ┌────────────────────────────────────────────────────┐   │ │
-│  │  │          Capa de API (Axios)                       │   │ │
-│  │  │      lib/utils.ts, constants.ts                   │   │ │
-│  │  └────────────────────────────────────────────────────┘   │ │
-│  │          ↓                                                 │ │
+┌────────────────────────────────────────────────────────────────┐
+│                      🌐 CLIENTE (NAVEGADOR)                    │
+│                                                                │
+│  ┌──────────────────────────────────────────────────────────┐ │
+│  │              📱 UI LAYER (Presentación)                  │ │
+│  │  ┌──────────────────────────────────────────────────┐   │ │
+│  │  │  Pages (Home, Products, Cart, Profile, etc)    │   │ │
+│  │  │  Components (Navbar, Card, Button, Form, etc)  │   │ │
+│  │  │  Styles (Tailwind CSS + Custom CSS)            │   │ │
+│  │  └──────────────────────────────────────────────────┘   │ │
+│  └────────────┬───────────────────────────────────────────┘ │
+│               │                                              │
+│  ┌────────────▼───────────────────────────────────────────┐ │
+│  │         ⚙️ LOGIC LAYER (Lógica de Negocio)            │ │
+│  │  ┌──────────────────────────────────────────────────┐  │ │
+│  │  │ State Management:                                │  │ │
+│  │  │ • Context API (Auth)                             │  │ │
+│  │  │ • Zustand (Cart, Favorites)                      │  │ │
+│  │  │ • Custom Hooks (useCart, useFavorites)           │  │ │
+│  │  │                                                  │  │ │
+│  │  │ Utilities:                                       │  │ │
+│  │  │ • api-client.ts (Axios)                          │  │ │
+│  │  │ • utils.ts (Helpers, Validators)                 │  │ │
+│  │  │ • constants.ts (Categorías, URLs)                │  │ │
+│  │  └──────────────────────────────────────────────────┘  │ │
+│  └────────────┬───────────────────────────────────────────┘ │
+│               │                                              │
+│               │ HTTP/HTTPS                                  │
+│               ▼                                              │
+└─────────────────────────────────────────────────────────────┘
+                 │
+                 │ RESTful API Calls
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    🖥️ SERVIDOR (BACKEND)                    │
+│                                                             │
+│  ┌───────────────────────────────────────────────────────┐ │
+│  │       🔌 API LAYER (Next.js API Routes)              │ │
+│  │  ┌────────────────────────────────────────────────┐  │ │
+│  │  │ GET    /api/products                          │  │ │
+│  │  │ GET    /api/categories                        │  │ │
+│  │  │ GET    /api/deals                             │  │ │
+│  │  │ POST   /api/auth/login                        │  │ │
+│  │  │ POST   /api/auth/register                     │  │ │
+│  │  │ POST   /api/cart/items                        │  │ │
+│  │  │ DELETE /api/cart/items/:id                    │  │ │
+│  │  └────────────────────────────────────────────────┘  │ │
+│  └────────────┬──────────────────────────────────────────┘ │
+│               │                                            │
+│  ┌────────────▼──────────────────────────────────────────┐ │
+│  │      📊 DATA LAYER (Prisma ORM)                      │ │
+│  │  ┌────────────────────────────────────────────────┐  │ │
+│  │  │ • Query Builder                                │  │ │
+│  │  │ • Type Safety                                  │  │ │
+│  │  │ • Migrations Management                        │  │ │
+│  │  └────────────────────────────────────────────────┘  │ │
+│  └────────────┬──────────────────────────────────────────┘ │
+│               │                                            │
+│               ▼                                            │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │        🗄️ DATABASE (PostgreSQL)                       │ │
+│  │  ┌──────────┐  ┌──────────┐  ┌──────────┐            │ │
+│  │  │ Users    │  │ Products │  │ Orders   │            │ │
+│  │  ├──────────┤  ├──────────┤  ├──────────┤            │ │
+│  │  │ Messages │  │ Reviews  │  │ Carts    │            │ │
+│  │  ├──────────┤  ├──────────┤  ├──────────┤            │ │
+│  │  │Favorites │  │ Ratings  │  │ Returns  │            │ │
+│  │  └──────────┘  └──────────┘  └──────────┘            │ │
 │  └────────────────────────────────────────────────────────┘ │
-│          │                                                    │
-└──────────┼────────────────────────────────────────────────────┘
-           │
-        HTTPS
-           │
-┌──────────┼────────────────────────────────────────────────────┐
-│          ↓                                                    │
-│  ┌────────────────────────────────────────────────────────┐  │
-│  │              BACKEND / API SERVER                      │  │
-│  │  ┌──────────────────────────────────────────────────┐  │  │
-│  │  │ Endpoints:                                       │  │  │
-│  │  │ POST   /api/auth/login                          │  │  │
-│  │  │ POST   /api/products                            │  │  │
-│  │  │ GET    /api/products/:id                        │  │  │
-│  │  │ POST   /api/cart/add                            │  │  │
-│  │  │ DELETE /api/cart/remove/:id                     │  │  │
-│  │  │ (más endpoints...)                              │  │  │
-│  │  └──────────────────────────────────────────────────┘  │  │
-│  │          ↓                                              │  │
-│  │  ┌────────────────────────────────────────────────────┐  │  │
-│  │  │           BASE DE DATOS                           │  │  │
-│  │  │  ┌──────────┐  ┌──────────┐  ┌──────────┐         │  │  │
-│  │  │  │ Users    │  │Products  │  │ Orders   │         │  │  │
-│  │  │  │ Messages │  │ Reviews  │  │ Carts    │         │  │  │
-│  │  │  └──────────┘  └──────────┘  └──────────┘         │  │  │
-│  │  └────────────────────────────────────────────────────┘  │  │
-│  └────────────────────────────────────────────────────────┘  │
-│                      SERVIDOR                               │
-└──────────────────────────────────────────────────────────────┘
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Componente Flow Diagram
+
+```
+USER INTERACTION
+      │
+      ▼
+┌─────────────────────────┐
+│ Event Handler           │
+│ (onClick, onChange...)  │
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Validate Input          │
+│ (Client-side validation)│
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Update State            │
+│ (Zustand/Context)       │
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Call API (if needed)    │
+│ (Axios requests)        │
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Process Response        │
+│ Update state again      │
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Component Re-render     │
+│ (React reconciliation)  │
+└─────────┬───────────────┘
+          │
+          ▼
+┌─────────────────────────┐
+│ Display Updates         │
+│ Show Toast/Notification │
+└─────────────────────────┘
+```
+
+### Technology Stack Layering
+
+```
+┌─────────────────────────────────────────────┐
+│         UI Layer                            │
+│  React 18, TypeScript, Tailwind CSS        │
+│  Framer Motion, Lucide React               │
+└──────────────┬──────────────────────────────┘
+               │
+┌──────────────▼──────────────────────────────┐
+│  State Management Layer                     │
+│  Context API, Zustand, Custom Hooks        │
+└──────────────┬──────────────────────────────┘
+               │
+┌──────────────▼──────────────────────────────┐
+│  API Client Layer                           │
+│  Axios, REST API Communication             │
+└──────────────┬──────────────────────────────┘
+               │
+┌──────────────▼──────────────────────────────┐
+│  Server/API Layer                           │
+│  Next.js API Routes, Request Handlers      │
+└──────────────┬──────────────────────────────┘
+               │
+┌──────────────▼──────────────────────────────┐
+│  Data Access Layer                          │
+│  Prisma ORM, Database Queries              │
+└──────────────┬──────────────────────────────┘
+               │
+┌──────────────▼──────────────────────────────┐
+│  Database Layer                             │
+│  PostgreSQL, Tables, Relations             │
+└─────────────────────────────────────────────┘
 ```
 
 ---

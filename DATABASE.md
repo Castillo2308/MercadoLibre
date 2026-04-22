@@ -1,4 +1,4 @@
-# 🗄️ Diseño de Base de Datos - MercadoLibre Clone
+# 🗄️ Diseño de Base de Datos - MercadoLibre Clone (NeonDB)
 
 ## 📑 Tabla de Contenidos
 
@@ -7,14 +7,14 @@
 3. [Tablas Principales](#tablas-principales)
 4. [Relaciones Entre Tablas](#relaciones-entre-tablas)
 5. [Justificación del Diseño](#justificación-del-diseño)
-6. [Scripts SQL](#scripts-sql)
+6. [Ejemplos de Queries Prisma](#ejemplos-de-queries-prisma)
 7. [Índices y Optimización](#índices-y-optimización)
 
 ---
 
 ## 📖 Descripción General
 
-Este documento describe el diseño de la base de datos para la aplicación MercadoLibre Clone. El sistema está diseñado para manejar:
+Este documento describe el diseño de la base de datos para la aplicación MercadoLibre Clone usando **NeonDB**, un servicio PostgreSQL serverless en la nube. El sistema está diseñado para manejar:
 
 - 👥 Gestión de usuarios (compradores y vendedores)
 - 📦 Catálogo de productos
@@ -24,33 +24,37 @@ Este documento describe el diseño de la base de datos para la aplicación Merca
 - ❤️ Productos favoritos
 
 **Tipo de Base de Datos:** Relacional (SQL)  
-**SGBD Recomendado:** PostgreSQL, MySQL, SQL Server  
+**Proveedor:** NeonDB (PostgreSQL Serverless)  
+**ORM:** Prisma 5.22+  
+**Ventajas de NeonDB:** ✅ Auto-scaling, ✅ Backups automáticos, ✅ SSL seguro, ✅ Sin mantenimiento, ✅ Conexiones branching para desarrollo  
 
 ---
 
-## 📊 Modelo de Datos Conceptual
+## 📊 Modelo de Datos Conceptual (Relacional PostgreSQL)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        MERCADOLIBRE CLONE                           │
-│                      Modelo de Datos Relacional                     │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                  MERCADOLIBRE CLONE - NeonDB                         │
+│              Modelo de Datos Relacional (PostgreSQL)                 │
+└──────────────────────────────────────────────────────────────────────┘
 
                               ┌──────────┐
                               │  USERS   │
-                              └──────────┘
-                                   │
-                    ┌──────────────┼──────────────┐
-                    │              │              │
-                    ▼              ▼              ▼
+                              └─────┬────┘
+                                    │
+                    ┌───────────────┼───────────────┐
+                    │               │               │
+                    ▼               ▼               ▼
               ┌──────────┐   ┌──────────┐   ┌──────────┐
-              │ PRODUCTS │   │ MESSAGES │   │  REVIEWS │
-              └──────────┘   └──────────┘   └──────────┘
-                    │              │              │
-                    ▼              ▼              ▼
-              ┌──────────┐   ┌──────────┐   ┌──────────┐
-              │  CARTS   │   │  ORDER   │   │ FAVORITES│
-              └──────────┘   └──────────┘   └──────────┘
+              │ PRODUCTS │   │  ORDERS  │   │FAVORITES │
+              └─────┬────┘   └────┬─────┘   └──────────┘
+                    │             │
+        ┌───────────┼─────────┐   │
+        │           │         │   │
+        ▼           ▼         ▼   ▼
+    ┌────────┐ ┌────────┐ ┌─────────┐ ┌──────────┐
+    │CATEGORY│ │REVIEWS │ │CART_ITEMS│ │MESSAGES  │
+    └────────┘ └────────┘ └─────────┘ └──────────┘
 ```
 
 ---
@@ -795,6 +799,330 @@ CREATE TABLE IF NOT EXISTS product_images (
 ---
 
 ## 🚀 Índices y Optimización
+
+### Índices Clave para Rendimiento
+
+| Tabla | Campo | Tipo | Propósito |
+|-------|-------|------|----------|
+| users | email | UNIQUE | Búsqueda rápida por email durante login |
+| users | isActive | INDEX | Filtrar usuarios activos |
+| users | isSeller | INDEX | Filtrar vendedores |
+| products | sellerId | INDEX | Encontrar productos por vendedor |
+| products | categoryId | INDEX | Filtrar por categoría |
+| products | isActive | INDEX | Mostrar solo productos activos |
+| products | isFeatured | INDEX | Destacados en homepage |
+| products | sku | UNIQUE | Búsqueda rápida por SKU |
+| carts | userId | UNIQUE | Un carrito por usuario |
+| cartItems | cartId, productId | UNIQUE | Evitar duplicados |
+| orders | buyerId | INDEX | Historial de compras |
+| orders | status | INDEX | Filtrar por estado |
+| reviews | productId | INDEX | Reseñas por producto |
+| reviews | rating | INDEX | Filtrar por calificación |
+| messages | conversation | INDEX | Buscar conversaciones |
+| favorites | user, product | UNIQUE | Evitar favoritos duplicados |
+
+### Estrategia de Consultas Comunes
+
+```sql
+-- 1. Obtener productos activos con categoría
+SELECT p.*, c.name as categoryName, u.firstName as sellerName
+FROM products p
+JOIN category c ON p.categoryId = c.id
+JOIN users u ON p.sellerId = u.id
+WHERE p.isActive = true
+ORDER BY p.createdAt DESC
+LIMIT 20;
+
+-- 2. Carrito completo de usuario
+SELECT ci.*, p.title, p.price, p.mainImageUrl
+FROM cartItems ci
+JOIN carts c ON ci.cartId = c.id
+JOIN products p ON ci.productId = p.id
+WHERE c.userId = ?
+ORDER BY ci.addedAt DESC;
+
+-- 3. Órdenes de usuario
+SELECT o.*, COUNT(oi.id) as itemCount, SUM(oi.subtotal) as totalSpent
+FROM orders o
+LEFT JOIN orderItems oi ON o.id = oi.orderId
+WHERE o.buyerId = ?
+GROUP BY o.id
+ORDER BY o.createdAt DESC;
+
+-- 4. Reseñas de producto
+SELECT r.*, u.firstName, u.lastName, u.avatarUrl
+FROM reviews r
+JOIN users u ON r.reviewerId = u.id
+WHERE r.productId = ?
+ORDER BY r.createdAt DESC;
+
+-- 5. Mensajes sin leer
+SELECT m.*, u.firstName, u.lastName
+FROM messages m
+JOIN users u ON m.senderId = u.id
+WHERE m.recipientId = ? AND m.isRead = false
+ORDER BY m.createdAt DESC;
+```
+
+### Optimizaciones Recomendadas
+
+1. **Particionamiento Temporal**: Particionar tablas grandes como `messages` y `orders` por fecha
+2. **Archivado**: Archivar órdenes completadas de hace más de 2 años
+3. **Caché**: Redis para:
+   - Listado de categorías
+   - Productos destacados
+   - Órdenes recientes
+4. **Conexión a BD**: Pool de conexiones con límite de 20-50 conexiones
+5. **Replicación**: Lectura desde réplica para consultas analíticas
+
+---
+
+## 📋 Migración de Datos Iniciales
+
+### Seed Data
+
+```typescript
+// prisma/seed.ts
+const seedData = async () => {
+  // 1. Crear categorías
+  const electronics = await prisma.category.create({
+    data: { name: "Electrónica", slug: "electronica" }
+  });
+
+  // 2. Crear usuarios
+  const seller = await prisma.user.create({
+    data: {
+      firstName: "Juan",
+      lastName: "Pérez",
+      email: "juan@example.com",
+      passwordHash: hashedPassword,
+      isSeller: true
+    }
+  });
+
+  // 3. Crear productos
+  await prisma.product.create({
+    data: {
+      title: "Laptop XYZ",
+      price: 999.99,
+      sellerId: seller.id,
+      categoryId: electronics.id
+    }
+  });
+};
+```
+
+---
+
+## 🔍 Consultas de Ejemplo en Prisma
+
+```typescript
+// Obtener productos con relaciones
+const products = await prisma.product.findMany({
+  where: { isActive: true },
+  include: {
+    seller: { select: { firstName: true, lastName: true } },
+    category: true,
+    images: true,
+    reviews: { take: 5 }
+  }
+});
+
+// Carrito completo
+const cart = await prisma.cart.findUnique({
+  where: { userId },
+  include: {
+    items: {
+      include: { product: true }
+    }
+  }
+});
+
+// Órdenes del usuario
+const orders = await prisma.order.findMany({
+  where: { buyerId: userId },
+  include: { items: { include: { product: true } } }
+});
+```
+
+---
+
+## 📊 Diagrama Mermaid ER (Entity-Relationship)
+
+```mermaid
+erDiagram
+    USERS ||--o{ PRODUCT : sells
+    USERS ||--o{ ORDER : places
+    USERS ||--o{ CART : has
+    USERS ||--o{ REVIEW : writes
+    USERS ||--o{ MESSAGE : sends
+    USERS ||--o{ FAVORITE : marks
+    PRODUCT ||--o{ PRODUCT_IMAGE : "has many"
+    PRODUCT ||--o{ CART_ITEM : "added to"
+    PRODUCT ||--o{ ORDER_ITEM : "part of"
+    PRODUCT ||--o{ REVIEW : "reviewed in"
+    CART ||--o{ CART_ITEM : contains
+    ORDER ||--o{ ORDER_ITEM : contains
+    CATEGORY ||--o{ PRODUCT : "has many"
+    SELLER_PROFILE ||--|| USERS : "belongs to"
+
+    USERS {
+        string id PK
+        string email UK
+        string firstName
+        string lastName
+        string passwordHash
+        float sellerRating
+        float buyerRating
+        boolean isSeller
+        boolean isVerified
+        datetime createdAt
+        datetime updatedAt
+    }
+
+    PRODUCT {
+        string id PK
+        string sellerId FK
+        string categoryId FK
+        string title
+        string description
+        decimal price
+        decimal originalPrice
+        int quantityAvailable
+        int quantitySold
+        float averageRating
+        int reviewCount
+        boolean isActive
+        boolean isFeatured
+        datetime createdAt
+    }
+
+    CART {
+        string id PK
+        string userId FK UK
+        int itemCount
+        decimal subtotal
+    }
+
+    ORDER {
+        string id PK
+        string buyerId FK
+        decimal subtotal
+        decimal tax
+        decimal totalAmount
+        string status
+        datetime createdAt
+    }
+
+    CATEGORY {
+        string id PK
+        string name UK
+        string slug UK
+        string description
+        int displayOrder
+    }
+
+    REVIEW {
+        string id PK
+        string productId FK
+        string reviewerId FK
+        int rating
+        string title
+        string comment
+        datetime createdAt
+    }
+
+    MESSAGE {
+        string id PK
+        string senderId FK
+        string recipientId FK
+        string content
+        boolean isRead
+        datetime createdAt
+    }
+```
+
+---
+
+## 🛡️ Consideraciones de Seguridad
+
+- ✅ Contraseñas hasheadas con bcryptjs (nunca en texto plano)
+- ✅ Foreign Keys para integridad referencial
+- ✅ Constraints para validación de datos
+- ✅ Índices en campos sensibles (email)
+- ✅ Logs de auditoría (createdAt, updatedAt)
+- ✅ Soft deletes donde sea necesario (is_active, is_banned)
+
+---
+
+## 📈 Crecimiento Esperado
+
+| Métrica | Valores |
+|---------|---------|
+| Usuarios | 0 → 100K → 1M |
+| Productos | 0 → 50K → 1M |
+| Órdenes/mes | 0 → 10K → 100K |
+| Mensajes | Escala con usuarios |
+| Reseñas | 10-20% de órdenes |
+
+**Recomendación**: Con crecimiento esperado a 1M productos, considerar:
+- Sharding por categoría o región
+- Búsqueda elástica (Elasticsearch)
+- Caché distribuido (Redis)
+- CDN para imágenes
+
+---
+
+## 🚀 Configuración de NeonDB
+
+### 1. Crear Proyecto en NeonDB
+
+1. Registrarse en [neon.tech](https://neon.tech)
+2. Crear un nuevo proyecto
+3. Copiar la **Connection String**
+4. Guardar en `.env.local`:
+
+```env
+DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
+```
+
+### 2. Configurar Prisma para NeonDB
+
+En `prisma/schema.prisma`:
+
+```prisma
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+```
+
+### 3. Crear Tablas (Migraciones)
+
+```bash
+# Crear migración
+npx prisma migrate dev --name init
+
+# Ver estado
+npx prisma migrate status
+
+# Aplicar en producción
+npx prisma migrate deploy
+```
+
+### 4. Acceder a Prisma Studio
+
+```bash
+# Interfaz gráfica para ver/editar datos
+npx prisma studio
+```
+
+---
+
+**Última actualización:** Abril 2026  
+**Base de Datos:** NeonDB (PostgreSQL Serverless)  
+**ORM:** Prisma 5.22+  
+**Tipo:** Relacional (SQL)
 
 ### Índices Clave para Rendimiento
 

@@ -35,12 +35,17 @@ Verificar instalación:
 git --version
 ```
 
-**3. Editor de Código** (opcional, pero recomendado)
+**3. Cuenta NeonDB**
+- **Crear cuenta:** [neon.tech](https://neon.tech)
+- Crear un proyecto PostgreSQL
+- Obtener Connection String
+
+**4. Editor de Código** (opcional, pero recomendado)
 - [Visual Studio Code](https://code.visualstudio.com)
 - [WebStorm](https://www.jetbrains.com/webstorm/)
 - Cualquier editor de tu preferencia
 
-**4. Navegador Web Moderno**
+**5. Navegador Web Moderno**
 - Chrome, Firefox, Safari o Edge (versiones recientes)
 
 ### Requisitos de Sistema
@@ -51,6 +56,7 @@ git --version
 | Espacio en Disco | 500 MB | 2 GB |
 | Procesador | Dual Core | Intel i5 / AMD Ryzen 5 |
 | OS | Windows 7+ / macOS / Linux | Windows 10+ / macOS 10.15+ |
+| Conexión Internet | Requerida | Banda ancha |
 
 ---
 
@@ -106,8 +112,9 @@ copy .env.example .env.local
 NODE_ENV=development
 NEXT_PUBLIC_API_URL=http://localhost:3000
 
-# Base de Datos (si aplica)
-DATABASE_URL=postgresql://user:password@localhost:5432/mercadolibre
+# Base de Datos - NeonDB (PostgreSQL Serverless)
+# Obtener de https://console.neon.tech
+DATABASE_URL="postgresql://user:password@host.neon.tech/dbname?sslmode=require"
 
 # Autenticación
 JWT_SECRET=tu-secreto-jwt-muy-seguro-cambiar-en-produccion
@@ -131,8 +138,29 @@ DEBUG=false
 - 🔐 Nunca compartas tu `.env.local`
 - 🔑 Genera un `JWT_SECRET` único y seguro
 - 📝 Incluye `.env.local` en `.gitignore`
+- 🌐 La DATABASE_URL debe incluir `?sslmode=require` para NeonDB
+- 🔗 Obtén la CONNECTION STRING de [neon.tech](https://neon.tech)
 
-### Paso 4: Ejecutar en Desarrollo
+### Paso 4: Configurar Base de Datos (NeonDB + Prisma)
+
+```bash
+# Generar cliente Prisma
+npx prisma generate
+
+# Ejecutar migraciones
+npx prisma migrate dev --name init
+
+# Ver base de datos en interfaz gráfica (opcional)
+npx prisma studio
+```
+
+**Verificar que se ejecutó correctamente:**
+```bash
+# Debería mostrar las tablas creadas
+npx prisma db pull
+```
+
+### Paso 5: Ejecutar en Desarrollo
 
 ```bash
 # Iniciar servidor de desarrollo
@@ -151,7 +179,7 @@ ready - started server on 0.0.0.0:3000
 ready - compiled client and server successfully (1.23 s)
 ```
 
-### Paso 5: Acceder a la Aplicación
+### Paso 6: Acceder a la Aplicación
 
 1. Abre tu navegador
 2. Navega a: **http://localhost:3000**
@@ -197,7 +225,52 @@ DEBUG=false
 
 ---
 
-## 🐳 Instalación con Docker
+## 🌐 Conexión a NeonDB
+
+### Crear un Proyecto en NeonDB
+
+1. **Registrarse en [neon.tech](https://neon.tech)**
+2. **Crear un nuevo proyecto:**
+   - Click en "Create a new project"
+   - Seleccionar región
+   - Esperar a que se cree la base de datos
+
+3. **Obtener Connection String:**
+   - Ir a Dashboard
+   - Seleccionar tu proyecto
+   - Copy la **Connection string**
+   - Guardar en `.env.local` como `DATABASE_URL`
+
+### Formato de Connection String
+
+```
+postgresql://user:password@host.neon.tech/dbname?sslmode=require
+```
+
+**Componentes:**
+- `user`: Usuario de la BD (default: `neondb_owner`)
+- `password`: Contraseña (cópiala del dashboard)
+- `host`: Host (ej: `ep-xxxxx.us-east-1.aws.neon.tech`)
+- `dbname`: Nombre de BD (default: `neondb`)
+
+### Usar Branching de NeonDB (Desarrollo)
+
+NeonDB permite crear branches automáticas para desarrollo:
+
+```bash
+# Ver ramas disponibles
+neon branches --project-id <project-id>
+
+# Crear rama de desarrollo
+neon branches create dev --project-id <project-id>
+
+# Usar rama diferente
+DATABASE_URL="postgresql://user:password@dev-xxxxx.us-east-1.aws.neon.tech/neondb?sslmode=require"
+```
+
+---
+
+## 🐳 Instalación con Docker (Alternativa)
 
 ### Requisito Previo: Instalar Docker
 
@@ -222,6 +295,9 @@ RUN npm ci
 # Copiar código fuente
 COPY . .
 
+# Ejecutar migraciones
+RUN npx prisma generate
+
 # Construir aplicación
 RUN npm run build
 
@@ -245,24 +321,10 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:3000
+      - DATABASE_URL=${DATABASE_URL}
     volumes:
       - .:/app
       - /app/node_modules
-
-  # Base de datos (opcional)
-  postgres:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: mercadolibre
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-volumes:
-  postgres_data:
 ```
 
 ### Paso 3: Ejecutar con Docker
@@ -272,7 +334,7 @@ volumes:
 docker build -t mercadolibre-clone .
 
 # Ejecutar contenedor
-docker run -p 3000:3000 mercadolibre-clone
+docker run -p 3000:3000 --env-file .env.local mercadolibre-clone
 
 # O usando docker-compose
 docker-compose up
