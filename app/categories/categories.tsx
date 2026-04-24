@@ -1,20 +1,7 @@
 'use client';
 
-import {
-  Smartphone,
-  Laptop,
-  Shirt,
-  Home,
-  BookOpen,
-  Dumbbell,
-  Gamepad2,
-  Music,
-  Camera,
-  Watch,
-  Utensils,
-  Car,
-  LucideIcon,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Smartphone, Laptop, Shirt, Home, BookOpen, Dumbbell, Gamepad2, Music, Camera, Watch, Utensils, Car, ArrowRight, Sparkles, Video as LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 
 interface Category {
@@ -23,167 +10,144 @@ interface Category {
   icon: LucideIcon;
   description: string;
   productCount: number;
+  gradient: string;
 }
 
 export default function Categories() {
   const categories: Category[] = [
-    {
-      id: 'electronics',
-      name: 'Electrónica',
-      icon: Smartphone,
-      description: 'Teléfonos, computadoras y accesorios',
-      productCount: 15234,
-    },
-    {
-      id: 'computers',
-      name: 'Computadoras',
-      icon: Laptop,
-      description: 'Laptops, desktops y componentes',
-      productCount: 8945,
-    },
-    {
-      id: 'clothing',
-      name: 'Ropa y Calzado',
-      icon: Shirt,
-      description: 'Prendas de moda para toda la familia',
-      productCount: 42156,
-    },
-    {
-      id: 'home',
-      name: 'Hogar',
-      icon: Home,
-      description: 'Muebles y decoración para tu hogar',
-      productCount: 23845,
-    },
-    {
-      id: 'books',
-      name: 'Libros',
-      icon: BookOpen,
-      description: 'Libros nuevos y usados',
-      productCount: 18234,
-    },
-    {
-      id: 'sports',
-      name: 'Deportes',
-      icon: Dumbbell,
-      description: 'Equipamiento y ropa deportiva',
-      productCount: 12543,
-    },
-    {
-      id: 'gaming',
-      name: 'Videojuegos',
-      icon: Gamepad2,
-      description: 'Juegos y consolas',
-      productCount: 9876,
-    },
-    {
-      id: 'audio',
-      name: 'Audio y Música',
-      icon: Music,
-      description: 'Auriculares, parlantes y equipos',
-      productCount: 7234,
-    },
-    {
-      id: 'photography',
-      name: 'Fotografía',
-      icon: Camera,
-      description: 'Cámaras y accesorios',
-      productCount: 5432,
-    },
-    {
-      id: 'watches',
-      name: 'Relojes',
-      icon: Watch,
-      description: 'Relojes y accesorios',
-      productCount: 6789,
-    },
-    {
-      id: 'kitchen',
-      name: 'Cocina',
-      icon: Utensils,
-      description: 'Electrodomésticos y utensilios',
-      productCount: 11234,
-    },
-    {
-      id: 'automotive',
-      name: 'Automoción',
-      icon: Car,
-      description: 'Accesorios y repuestos para vehículos',
-      productCount: 8765,
-    },
+    { id: 'electronics', name: 'Electronica', icon: Smartphone, description: 'Telefonos, computadoras y accesorios', productCount: 15234, gradient: 'from-blue-500/30 to-cyan-500/10' },
+    { id: 'computers', name: 'Computadoras', icon: Laptop, description: 'Laptops, desktops y componentes', productCount: 8945, gradient: 'from-emerald-500/30 to-teal-500/10' },
+    { id: 'clothing', name: 'Ropa y Calzado', icon: Shirt, description: 'Prendas de moda para toda la familia', productCount: 42156, gradient: 'from-pink-500/30 to-rose-500/10' },
+    { id: 'home', name: 'Hogar', icon: Home, description: 'Muebles y decoracion para tu hogar', productCount: 23845, gradient: 'from-amber-500/30 to-yellow-500/10' },
+    { id: 'books', name: 'Libros', icon: BookOpen, description: 'Libros nuevos y usados de toda clase', productCount: 18234, gradient: 'from-green-500/30 to-lime-500/10' },
+    { id: 'sports', name: 'Deportes', icon: Dumbbell, description: 'Equipamiento y ropa deportiva', productCount: 12543, gradient: 'from-orange-500/30 to-red-500/10' },
+    { id: 'gaming', name: 'Videojuegos', icon: Gamepad2, description: 'Juegos, consolas y accesorios', productCount: 9876, gradient: 'from-cyan-500/30 to-blue-500/10' },
+    { id: 'audio', name: 'Audio y Musica', icon: Music, description: 'Auriculares, parlantes y equipos', productCount: 7234, gradient: 'from-fuchsia-500/30 to-pink-500/10' },
+    { id: 'photography', name: 'Fotografia', icon: Camera, description: 'Camaras y accesorios profesionales', productCount: 5432, gradient: 'from-teal-500/30 to-cyan-500/10' },
+    { id: 'watches', name: 'Relojes', icon: Watch, description: 'Relojes premium y accesorios', productCount: 6789, gradient: 'from-yellow-500/30 to-amber-500/10' },
+    { id: 'kitchen', name: 'Cocina', icon: Utensils, description: 'Electrodomesticos y utensilios', productCount: 11234, gradient: 'from-lime-500/30 to-green-500/10' },
+    { id: 'automotive', name: 'Automocion', icon: Car, description: 'Accesorios y repuestos para vehiculos', productCount: 8765, gradient: 'from-red-500/30 to-orange-500/10' },
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 py-12 border-b border-gray-200">
-        <div className="container mx-auto px-4">
-          <h1 className="text-5xl font-black text-gray-900 mb-3">Categorías</h1>
-          <p className="text-lg text-gray-600">
-            Explora nuestras categorías y descubre miles de productos
-          </p>
-        </div>
-      </div>
+    <main className="min-h-screen bg-[#071425]">
+      {/* Hero */}
+      <section className="relative overflow-hidden py-20 border-b border-white/10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_20%,rgba(29,184,73,0.18),transparent_45%),radial-gradient(circle_at_80%_80%,rgba(37,99,235,0.18),transparent_45%)]" />
+        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent" />
 
-      <div className="container mx-auto px-4 py-12">
-        {/* Categories Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-16">
+        <div className="container mx-auto px-4 relative z-10">
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white/80 backdrop-blur mb-6">
+              <Sparkles size={14} className="text-primary" />
+              Mas de 170,000 productos disponibles
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">
+              Explorar por
+              <span className="block text-primary">Categorias</span>
+            </h1>
+            <p className="text-white/55 text-xl max-w-2xl">
+              Encuentra exactamente lo que buscas entre nuestras categorias con miles de productos verificados.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-16">
           {categories.map((category, idx) => {
             const Icon = category.icon;
             return (
-              <Link key={category.id} href={`/search?category=${category.id}`}>
-                <div 
-                  className="card-elevated group h-full p-6 hover:shadow-2xl transition-all duration-300 hover:scale-105 animate-fadeIn cursor-pointer"
-                  style={{ animationDelay: `${idx * 30}ms` }}
-                >
-                  {/* Icon */}
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-dark rounded-xl flex items-center justify-center mb-4 group-hover:scale-125 transition-transform duration-300">
-                    <Icon size={32} className="text-white" />
-                  </div>
+              <motion.div
+                key={category.id}
+                initial={{ opacity: 0, y: 28 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.04 }}
+                whileHover={{ y: -8, scale: 1.02 }}
+              >
+                <Link href={`/search?category=${category.id}`}>
+                  <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${category.gradient} p-6 h-full cursor-pointer group bg-[#0d1c31]`}>
+                    <div className="absolute inset-0 bg-[#0d1c31]/60 group-hover:bg-[#0d1c31]/40 transition-all duration-300" />
 
-                  {/* Content */}
-                  <h3 className="text-xl font-black text-gray-900 mb-2 group-hover:text-secondary transition-colors">
-                    {category.name}
-                  </h3>
-                  <p className="text-gray-600 text-sm mb-6 line-clamp-2 h-10">
-                    {category.description}
-                  </p>
+                    <div className="relative z-10">
+                      <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300 shadow-lg">
+                        <Icon size={26} className="text-white group-hover:text-primary transition-colors" />
+                      </div>
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t-2 border-gray-100 group-hover:border-secondary transition-colors">
-                    <p className="text-xs font-semibold text-gray-500">
-                      {category.productCount.toLocaleString()} artículos
-                    </p>
-                    <span className="text-secondary font-black text-lg group-hover:translate-x-1 transition-transform">→</span>
+                      <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors duration-200">
+                        {category.name}
+                      </h3>
+                      <p className="text-white/50 text-sm mb-5 line-clamp-2 leading-relaxed">
+                        {category.description}
+                      </p>
+
+                      <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                        <p className="text-xs font-medium text-white/35">
+                          {category.productCount.toLocaleString()} articulos
+                        </p>
+                        <motion.div
+                          whileHover={{ x: 4 }}
+                          className="h-8 w-8 rounded-full bg-white/10 border border-white/15 flex items-center justify-center group-hover:bg-primary group-hover:border-primary transition-all duration-300"
+                        >
+                          <ArrowRight size={14} className="text-white/60 group-hover:text-[#071425] transition-colors" />
+                        </motion.div>
+                      </div>
+                    </div>
+
+                    <div className="absolute -bottom-6 -right-6 h-28 w-28 rounded-full bg-white/5 blur-2xl group-hover:bg-primary/15 transition-all duration-500" />
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
 
-        {/* Featured Spotlight */}
-        <div className="card-elevated overflow-hidden">
-          <div className="bg-gradient-to-r from-primary to-primary-dark px-8 py-12 text-white text-center">
-            <h2 className="text-4xl font-black mb-4">
-              ¿No encuentras lo que buscas?
+        {/* Stats Bar */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
+        >
+          {[
+            { value: '170K+', label: 'Productos activos' },
+            { value: '12', label: 'Categorias' },
+            { value: '98%', label: 'Satisfaccion' },
+            { value: '24h', label: 'Soporte' },
+          ].map((stat, idx) => (
+            <div key={idx} className="rounded-2xl border border-white/10 bg-[#0d1c31] p-5 text-center">
+              <p className="text-3xl font-bold text-primary mb-1">{stat.value}</p>
+              <p className="text-sm text-white/50">{stat.label}</p>
+            </div>
+          ))}
+        </motion.div>
+
+        {/* CTA */}
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="relative overflow-hidden rounded-3xl border border-white/15 bg-gradient-to-r from-[#0f2139] via-[#132a46] to-[#1b3a62] p-10 md:p-14 text-center"
+        >
+          <div className="absolute -right-12 -top-12 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+          <div className="absolute -left-12 -bottom-12 h-48 w-48 rounded-full bg-blue-500/15 blur-3xl" />
+          <div className="relative z-10">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              No encuentras lo que buscas?
             </h2>
-            <p className="text-lg mb-8 text-white/90 max-w-2xl mx-auto">
-              Utiliza nuestra búsqueda avanzada con filtros inteligentes para encontrar exactamente lo que necesitas
+            <p className="text-white/65 text-lg mb-8 max-w-xl mx-auto">
+              Usa nuestra busqueda avanzada con filtros inteligentes para encontrar exactamente lo que necesitas.
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
-              <Link
-                href="/search"
-                className="btn bg-white text-secondary hover:bg-gray-100 font-bold px-8 py-3 rounded-lg transition-all hover:scale-105"
-              >
-                Búsqueda Avanzada
+              <Link href="/search" className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-semibold text-[#071425] transition hover:brightness-105">
+                Busqueda Avanzada <ArrowRight size={18} />
               </Link>
-              <button className="btn border-2 border-white text-white hover:bg-white/20 font-bold px-8 py-3 rounded-lg transition-all hover:scale-105">
+              <Link href="/messages" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-8 py-3 font-semibold text-white transition hover:bg-white/20">
                 Contactar Soporte
-              </button>
+              </Link>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </main>
   );
