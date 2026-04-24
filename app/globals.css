@@ -14,7 +14,7 @@ html {
 html,
 body {
   @apply m-0 p-0 font-poppins;
-  background: linear-gradient(135deg, #f0f4ff 0%, #f5f7ff 50%, #fff5f7 100%);
+  background: linear-gradient(180deg, #071425 0%, #0a1a2d 55%, #0f2139 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;

@@ -33,8 +33,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={`${poppins.variable} ${outfit.variable}`} suppressHydrationWarning>
-      <body className="font-poppins overflow-x-hidden">
-        <div className="fixed inset-0 -z-10 bg-gradient-to-br from-blue-50 via-white to-pink-50" />
+      <body className="font-poppins overflow-x-hidden bg-[#071425]">
+        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(255,230,0,0.08),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#071425_0%,#0a1a2d_50%,#0f2139_100%)]" />
         <AuthProvider>
           <Navbar />
           <main className="min-h-screen">
