@@ -1,0 +1,641 @@
+// Prisma Schema - MercadoLibre Clone (ENTERPRISE VERSION)
+// Marketplace completo con todas las funcionalidades
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================
+// 1. USERS - Usuarios del Sistema
+// ========================================
+model User {
+  id            String   @id @default(cuid())
+  
+  // Información Personal
+  firstName     String
+  lastName      String
+  email         String   @unique
+  phone         String?
+  
+  // Autenticación
+  passwordHash  String
+  
+  // Ubicación
+  address       String?
+  city          String?
+  state         String?
+  postalCode    String?
+  country       String?
+  
+  // Perfil
+  avatarUrl     String?
+  bio           String?
+  
+  // Estadísticas
+  sellerRating  Float    @default(0)
+  buyerRating   Float    @default(0)
+  totalReviews  Int      @default(0)
+  totalSales    Int      @default(0)
+  totalPurchases Int     @default(0)
+  
+  // Estados y Verificación
+  isVerified    Boolean  @default(false)
+  isActive      Boolean  @default(true)
+  isSeller      Boolean  @default(false)
+  isBanned      Boolean  @default(false)
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  lastLogin     DateTime?
+  
+  // Relaciones
+  productsAsSeller    Product[]         @relation("SellerProducts")
+  reviews             Review[]          @relation("ReviewerReviews")
+  reviewsReceived     Review[]          @relation("SellerReviews")
+  messagesAsSender    Message[]         @relation("SenderMessages")
+  messagesAsRecipient Message[]         @relation("RecipientMessages")
+  cart                Cart?
+  orders              Order[]           @relation("BuyerOrders")
+  orderItems          OrderItem[]       @relation("SellerOrderItems")
+  favorites           Favorite[]
+  coupons             Coupon[]
+  notifications       Notification[]
+  sellerProfile       SellerProfile?
+  ratings             Rating[]
+  returns             Return[]          @relation("BuyerReturns")
+  returnedToUser      Return[]          @relation("SellerReturns")
+  
+  @@index([email])
+  @@index([isActive])
+  @@index([isSeller])
+}
+
+// ========================================
+// 2. SELLER_PROFILE - Perfil Mejorado de Vendedor
+// ========================================
+model SellerProfile {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // Información Comercial
+  storeName       String
+  storeDescription String?
+  storePolicy     String?
+  
+  // Estadísticas
+  totalProducts   Int      @default(0)
+  monthlyRevenue  Decimal  @default(0) @db.Decimal(12, 2)
+  responseTime    Int      @default(24) // horas
+  shippingTime    Int      @default(3)  // días
+  
+  // Niveles
+  sellerLevel     String   @default("bronze") // bronze, silver, gold, platinum
+  isVerifiedSeller Boolean @default(false)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
+
+// ========================================
+// 3. CATEGORIES - Categorías de Productos
+// ========================================
+model Category {
+  id              String   @id @default(cuid())
+  name            String   @unique
+  slug            String   @unique
+  description     String?
+  icon            String?
+  parentCategoryId String?
+  
+  // Estadísticas
+  productCount    Int      @default(0)
+  
+  // Orden
+  displayOrder    Int      @default(0)
+  isActive        Boolean  @default(true)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  parentCategory  Category? @relation("SubCategories", fields: [parentCategoryId], references: [id])
+  subCategories   Category[] @relation("SubCategories")
+  products        Product[]
+  
+  @@index([parentCategoryId])
+  @@index([slug])
+}
+
+// ========================================
+// 4. PRODUCTS - Productos del Catálogo
+// ========================================
+model Product {
+  id              String   @id @default(cuid())
+  sellerId        String
+  categoryId      String
+  
+  // Información
+  title           String
+  description     String?
+  sku             String   @unique
+  
+  // Precios
+  price           Decimal  @db.Decimal(10, 2)
+  originalPrice   Decimal? @db.Decimal(10, 2)
+  discountPercentage Decimal? @db.Decimal(5, 2)
+  cost            Decimal? @db.Decimal(10, 2) // Costo para el vendedor
+  
+  // Inventario
+  quantityAvailable Int
+  quantitySold    Int      @default(0)
+  minQuantity     Int      @default(1)
+  
+  // Imágenes
+  mainImageUrl    String?
+  
+  // Estadísticas
+  averageRating   Float    @default(0)
+  reviewCount     Int      @default(0)
+  viewCount       Int      @default(0)
+  
+  // Estados
+  isActive        Boolean  @default(true)
+  isFeatured      Boolean  @default(false)
+  isPromoted      Boolean  @default(false)
+  condition       String   @default("new") // new, like-new, good, fair, refurbished
+  
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  seller          User     @relation("SellerProducts", fields: [sellerId], references: [id], onDelete: Cascade)
+  category        Category @relation(fields: [categoryId], references: [id])
+  images          ProductImage[]
+  reviews         Review[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  favorites       Favorite[]
+  ratings         Rating[]
+  
+  @@index([sellerId])
+  @@index([categoryId])
+  @@index([isActive])
+  @@index([isFeatured])
+  @@index([sku])
+}
+
+// ========================================
+// 5. PRODUCT_IMAGES - Múltiples Imágenes
+// ========================================
+model ProductImage {
+  id              String   @id @default(cuid())
+  productId       String
+  
+  // Imagen
+  imageUrl        String
+  altText         String?
+  
+  // Orden
+  displayOrder    Int      @default(0)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@index([productId])
+}
+
+// ========================================
+// 6. CARTS - Carrito de Compras
+// ========================================
+model Cart {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  
+  // Metadata
+  itemCount       Int      @default(0)
+  subtotal        Decimal  @default(0) @db.Decimal(10, 2)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           CartItem[]
+  
+  @@index([userId])
+}
+
+// ========================================
+// 7. CART_ITEMS - Items en el Carrito
+// ========================================
+model CartItem {
+  id              String   @id @default(cuid())
+  cartId          String
+  productId       String
+  
+  // Cantidad y Precio
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  
+  // Timestamps
+  addedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  cart            Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([cartId, productId])
+  @@index([cartId])
+  @@index([productId])
+}
+
+// ========================================
+// 8. ORDERS - Órdenes de Compra
+// ========================================
+model Order {
+  id              String   @id @default(cuid())
+  buyerId         String
+  orderNumber     String   @unique
+  
+  // Información de Envío
+  shippingAddress String?
+  shippingCity    String?
+  shippingState   String?
+  shippingPostalCode String?
+  shippingCountry String?
+  
+  // Montos
+  subtotal        Decimal  @db.Decimal(10, 2)
+  tax             Decimal  @default(0) @db.Decimal(10, 2)
+  shippingCost    Decimal  @default(0) @db.Decimal(10, 2)
+  discount        Decimal  @default(0) @db.Decimal(10, 2)
+  totalAmount     Decimal  @db.Decimal(10, 2)
+  
+  // Estado
+  status          String   @default("pending") // pending, confirmed, shipped, delivered, cancelled
+  
+  // Pago
+  paymentMethod   String?
+  paymentStatus   String   @default("pending") // pending, completed, failed, refunded
+  
+  // Cupones
+  couponCode      String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  confirmedAt     DateTime?
+  shippedAt       DateTime?
+  deliveredAt     DateTime?
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  buyer           User     @relation("BuyerOrders", fields: [buyerId], references: [id], onDelete: Cascade)
+  items           OrderItem[]
+  shipment        Shipment?
+  transaction     Transaction?
+  returns         Return[]
+  
+  @@index([buyerId])
+  @@index([status])
+  @@index([orderNumber])
+}
+
+// ========================================
+// 9. ORDER_ITEMS - Items de la Orden
+// ========================================
+model OrderItem {
+  id              String   @id @default(cuid())
+  orderId         String
+  productId       String
+  sellerId        String
+  
+  // Cantidad y Precios
+  quantity        Int
+  unitPrice       Decimal  @db.Decimal(10, 2)
+  subtotal        Decimal  @db.Decimal(10, 2)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id])
+  seller          User     @relation("SellerOrderItems", fields: [sellerId], references: [id])
+  reviews         Review[] @relation("OrderItemReviews")
+  returns         Return[]
+  
+  @@index([orderId])
+  @@index([productId])
+  @@index([sellerId])
+}
+
+// ========================================
+// 10. REVIEWS - Reseñas y Calificaciones
+// ========================================
+model Review {
+  id              String   @id @default(cuid())
+  productId       String
+  reviewerId      String
+  sellerId        String
+  orderItemId     String?
+  
+  // Calificación
+  rating          Int // 1-5
+  title           String?
+  comment         String?
+  
+  // Interacción
+  helpfulCount    Int      @default(0)
+  unhelpfulCount  Int      @default(0)
+  
+  // Verificado
+  isVerifiedPurchase Boolean @default(false)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  reviewer        User     @relation("ReviewerReviews", fields: [reviewerId], references: [id], onDelete: Cascade)
+  seller          User     @relation("SellerReviews", fields: [sellerId], references: [id], onDelete: Cascade)
+  orderItem       OrderItem? @relation("OrderItemReviews", fields: [orderItemId], references: [id])
+  
+  @@index([productId])
+  @@index([reviewerId])
+  @@index([sellerId])
+}
+
+// ========================================
+// 11. RATINGS - Calificaciones Separadas
+// ========================================
+model Rating {
+  id              String   @id @default(cuid())
+  productId       String
+  userId          String
+  
+  // Calificaciones Desglosadas
+  qualityRating   Int? // 1-5
+  sellerRating    Int? // 1-5
+  shippingRating  Int? // 1-5
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([productId, userId])
+  @@index([productId])
+  @@index([userId])
+}
+
+// ========================================
+// 12. MESSAGES - Sistema de Mensajería
+// ========================================
+model Message {
+  id              String   @id @default(cuid())
+  senderId        String
+  recipientId     String
+  
+  // Contenido
+  content         String
+  
+  // Estado
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  
+  // Contexto
+  productId       String?
+  orderId         String?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  sender          User     @relation("SenderMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  recipient       User     @relation("RecipientMessages", fields: [recipientId], references: [id], onDelete: Cascade)
+  
+  @@index([senderId])
+  @@index([recipientId])
+  @@index([isRead])
+}
+
+// ========================================
+// 13. FAVORITES - Productos Favoritos
+// ========================================
+model Favorite {
+  id              String   @id @default(cuid())
+  userId          String
+  productId       String
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product         Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, productId])
+  @@index([userId])
+}
+
+// ========================================
+// 14. SHIPMENTS - Envíos y Tracking
+// ========================================
+model Shipment {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  
+  // Información de Envío
+  trackingNumber  String   @unique
+  carrier         String? // DHL, FedEx, UPS, etc.
+  
+  // Estado
+  status          String   @default("pending") // pending, picked_up, in_transit, out_for_delivery, delivered
+  estimatedDelivery DateTime?
+  
+  // Ubicación Actual
+  currentLocation String?
+  lastUpdate      String?
+  
+  // Timestamps
+  pickedAt        DateTime?
+  deliveredAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@index([trackingNumber])
+}
+
+// ========================================
+// 15. TRANSACTIONS - Transacciones y Pagos
+// ========================================
+model Transaction {
+  id              String   @id @default(cuid())
+  orderId         String   @unique
+  
+  // Información de Transacción
+  transactionId   String   @unique
+  amount          Decimal  @db.Decimal(12, 2)
+  currency        String   @default("USD")
+  
+  // Método de Pago
+  paymentMethod   String // credit_card, debit_card, paypal, bank_transfer
+  
+  // Estado
+  status          String   @default("pending") // pending, completed, failed, refunded, disputed
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  completedAt     DateTime?
+  failedAt        DateTime?
+  refundedAt      DateTime?
+  
+  // Relaciones
+  order           Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  
+  @@index([orderId])
+  @@index([transactionId])
+}
+
+// ========================================
+// 16. COUPONS - Cupones y Descuentos
+// ========================================
+model Coupon {
+  id              String   @id @default(cuid())
+  code            String   @unique @db.VarChar(50)
+  
+  // Detalles
+  description     String?
+  discountType    String // percentage, fixed_amount
+  discountValue   Decimal @db.Decimal(10, 2)
+  
+  // Límites
+  maxUses         Int?
+  totalUses       Int      @default(0)
+  minOrderAmount  Decimal? @db.Decimal(10, 2)
+  maxDiscount     Decimal? @db.Decimal(10, 2)
+  
+  // Categorías Aplicables
+  applicableToAll Boolean  @default(true)
+  
+  // Validez
+  isActive        Boolean  @default(true)
+  startDate       DateTime
+  endDate         DateTime
+  
+  // Creador
+  createdById     String
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  createdBy       User     @relation(fields: [createdById], references: [id])
+  
+  @@index([code])
+  @@index([isActive])
+}
+
+// ========================================
+// 17. RETURNS - Devoluciones
+// ========================================
+model Return {
+  id              String   @id @default(cuid())
+  orderId         String
+  orderItemId     String
+  buyerId         String
+  sellerId        String
+  
+  // Detalles
+  reason          String // defective, not_as_described, changed_mind, etc.
+  description     String?
+  
+  // Fotos
+  photoUrls       String[]
+  
+  // Estado
+  status          String   @default("pending") // pending, approved, shipped_back, received, completed, rejected
+  
+  // Reembolso
+  refundAmount    Decimal? @db.Decimal(10, 2)
+  refundStatus    String? // pending, completed, failed
+  
+  // Timestamps
+  requestedAt     DateTime @default(now())
+  approvedAt      DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relaciones
+  order           Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderItem       OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  buyer           User      @relation("BuyerReturns", fields: [buyerId], references: [id])
+  seller          User      @relation("SellerReturns", fields: [sellerId], references: [id])
+  
+  @@index([orderId])
+  @@index([orderItemId])
+  @@index([buyerId])
+  @@index([sellerId])
+  @@index([status])
+}
+
+// ========================================
+// 18. NOTIFICATIONS - Notificaciones
+// ========================================
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Contenido
+  title           String
+  message         String
+  type            String // order, message, review, promotion, system
+  
+  // Link
+  relatedLink     String?
+  
+  // Estado
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime?
+  
+  // Relaciones
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+}
