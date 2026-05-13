@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 
@@ -12,15 +12,18 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const fromRedirect = searchParams.get('redirect');
+  const redirectTo = searchParams.get('redirect');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
@@ -32,22 +35,20 @@ export default function Login() {
     }
 
     try {
-      login(email, password);
-      setTimeout(() => {
-        router.push(fromRedirect ? '/cart' : '/');
-      }, 500);
+      await login(email, password);
+      router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
     } catch (err) {
-      setError('Error al iniciar sesión');
+      setError(err instanceof Error ? err.message : 'Error al iniciar sesion');
       setLoading(false);
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
-    if (!email || !name || !password) {
+    if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       setError('Por favor completa todos los campos');
       setLoading(false);
       return;
@@ -59,13 +60,31 @@ export default function Login() {
       return;
     }
 
+    if (password !== confirmPassword) {
+      setError('Las contrasenas no coinciden');
+      setLoading(false);
+      return;
+    }
+
     try {
-      register(email, name, password);
-      setTimeout(() => {
-        router.push('/');
-      }, 500);
+      await register({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        confirmPassword,
+      });
+      setIsLogin(true);
+      setEmail('');
+      setPassword('');
+      setFirstName('');
+      setLastName('');
+      setPhone('');
+      setConfirmPassword('');
+      router.push('/auth/login');
     } catch (err) {
-      setError('Error al registrarse');
+      setError(err instanceof Error ? err.message : 'Error al registrarse');
       setLoading(false);
     }
   };
@@ -74,7 +93,10 @@ export default function Login() {
     setError('');
     setEmail('');
     setPassword('');
-    setName('');
+    setFirstName('');
+    setLastName('');
+    setPhone('');
+    setConfirmPassword('');
     setIsLogin(!isLogin);
   };
 
@@ -183,31 +205,63 @@ export default function Login() {
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-6">
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Nombre Completo</label>
-                <div className="group relative">
-                  <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Tu nombre"
-                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-white/75">Nombre</label>
+                  <div className="group relative">
+                    <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Tu nombre"
+                      className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-white/75">Apellidos</label>
+                  <div className="group relative">
+                    <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Tus apellidos"
+                      className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
-                <div className="group relative">
-                  <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
-                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
+                  <div className="group relative">
+                    <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@email.com"
+                      className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-white/75">Numero de Celular</label>
+                  <div className="group relative">
+                    <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                    <input
+                      type="tel"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="+34 600 000 000"
+                      className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -229,6 +283,20 @@ export default function Login() {
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Confirmar Contrasena</label>
+                <div className="group relative">
+                  <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirma tu contrasena"
+                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
                 </div>
               </div>
 

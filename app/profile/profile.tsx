@@ -18,22 +18,38 @@ import {
   TrendingUp,
   User,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { useRouter } from 'next/navigation';
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
+  const { user, logout } = useAuth();
+  const { clearCart } = useShoppingCart();
+  const router = useRouter();
 
-  const userInfo = {
-    name: 'Juan González',
-    email: 'juan@example.com',
-    phone: '+34 612 345 678',
-    location: 'Madrid, España',
-    joinDate: '15 de enero de 2023',
-    rating: 4.8,
-    reviews: 156,
-    totalSales: 1250,
-    totalPurchases: 3420,
-  };
+  const userInfo = useMemo(() => {
+    const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Usuario';
+    return {
+      name: fullName || 'Usuario',
+      email: user?.email || 'sin-correo@kivra.com',
+      phone: user?.phone || 'Sin telefono',
+      location: 'Madrid, Espana',
+      joinDate: '15 de enero de 2023',
+      rating: 4.8,
+      reviews: 156,
+      totalSales: 1250,
+      totalPurchases: 3420,
+    };
+  }, [user]);
+
+  const initials = useMemo(() => {
+    const parts = userInfo.name.split(' ').filter(Boolean);
+    const first = parts[0]?.charAt(0) || 'U';
+    const second = parts[1]?.charAt(0) || '';
+    return `${first}${second}`.toUpperCase();
+  }, [userInfo.name]);
 
   const tabs = [
     { id: 'overview', label: 'Resumen', icon: User },
@@ -119,7 +135,7 @@ export default function Profile() {
                 transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
                 className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white/20 bg-gradient-to-br from-primary to-secondary text-4xl font-black text-gray-900 shadow-[0_18px_42px_rgba(0,0,0,0.45)] md:h-32 md:w-32 md:text-5xl"
               >
-                JG
+                {initials}
               </motion.div>
               <div className="pb-1">
                 <h1 className="mb-2 text-3xl font-black text-white md:text-4xl">{userInfo.name}</h1>
@@ -213,7 +229,14 @@ export default function Profile() {
                 })}
               </nav>
 
-              <button className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-accent text-accent rounded-lg hover:bg-accent/10 transition-all font-semibold">
+              <button
+                onClick={() => {
+                  logout();
+                  clearCart();
+                  router.push('/');
+                }}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-accent text-accent rounded-lg hover:bg-accent/10 transition-all font-semibold"
+              >
                 <LogOut size={20} />
                 Cerrar Sesion
               </button>

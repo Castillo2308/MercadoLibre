@@ -31,7 +31,7 @@ function OptimizedLinkComponent({
       {...props}
       className={className}
       onClick={handleClick}
-      onMouseEnter={(e) => {
+      onMouseEnter={() => {
         if (prefetch && typeof props.href === 'string') {
           router.prefetch(props.href);
         }

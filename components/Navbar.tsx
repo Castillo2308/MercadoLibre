@@ -10,21 +10,20 @@ import {
   Search,
   ShoppingCart,
   Sparkles,
-  Store,
   User,
   X,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import Logo from '@/Imagenes/Logo.png';
 
 const mainLinks = [
-  { href: '/categories', label: 'Explorar' },
+  { href: '/explore', label: 'Explorar' },
   { href: '/deals', label: 'Ofertas' },
   { href: '/sell', label: 'Vender' },
 ];
@@ -33,28 +32,28 @@ const productMegaMenu = [
   {
     title: 'Tecnologia',
     items: [
-      { icon: '💻', label: 'Laptops y PC', href: '/categories' },
-      { icon: '📱', label: 'Celulares', href: '/categories' },
-      { icon: '🎮', label: 'Gaming', href: '/categories' },
-      { icon: '🎧', label: 'Audio', href: '/categories' },
+      { icon: '💻', label: 'Laptops y PC', href: '/search?category=laptops-pc' },
+      { icon: '📱', label: 'Celulares', href: '/search?category=celulares' },
+      { icon: '🎮', label: 'Gaming', href: '/search?category=gaming' },
+      { icon: '🎧', label: 'Audio', href: '/search?category=audio' },
     ],
   },
   {
     title: 'Hogar y estilo',
     items: [
-      { icon: '🏠', label: 'Hogar', href: '/categories' },
-      { icon: '👟', label: 'Moda', href: '/categories' },
-      { icon: '⌚', label: 'Accesorios', href: '/categories' },
-      { icon: '🧴', label: 'Belleza', href: '/categories' },
+      { icon: '🏠', label: 'Hogar', href: '/search?category=hogar' },
+      { icon: '👟', label: 'Moda', href: '/search?category=moda' },
+      { icon: '⌚', label: 'Accesorios', href: '/search?category=accesorios' },
+      { icon: '🧴', label: 'Belleza', href: '/search?category=belleza' },
     ],
   },
   {
     title: 'Movilidad y deporte',
     items: [
-      { icon: '🚗', label: 'Movilidad', href: '/categories' },
-      { icon: '🚲', label: 'Ciclismo', href: '/categories' },
-      { icon: '🏋️', label: 'Fitness', href: '/categories' },
-      { icon: '⚽', label: 'Deportes', href: '/categories' },
+      { icon: '🚗', label: 'Movilidad', href: '/search?category=movilidad' },
+      { icon: '🚲', label: 'Ciclismo', href: '/search?category=ciclismo' },
+      { icon: '🏋️', label: 'Fitness', href: '/search?category=fitness' },
+      { icon: '⚽', label: 'Deportes', href: '/search?category=deportes' },
     ],
   },
 ];
@@ -64,19 +63,16 @@ function NavbarComponent() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
-  const { getTotalItems } = useShoppingCart();
+  const { getTotalItems, clearCart } = useShoppingCart();
   const { wishlist } = useWishlist();
   const router = useRouter();
-  const [cartCount, setCartCount] = useState(0);
-
-  useEffect(() => {
-    setCartCount(getTotalItems());
-  }, [getTotalItems]);
+  const cartCount = getTotalItems();
 
   const handleLogout = useCallback(() => {
     logout();
+    clearCart();
     router.push('/');
-  }, [logout, router]);
+  }, [logout, clearCart, router]);
 
   const submitSearch = useCallback(() => {
     const query = searchQuery.trim();
@@ -95,8 +91,8 @@ function NavbarComponent() {
   );
 
   const userInitial = useMemo(() => {
-    if (!user?.name) return 'U';
-    return user.name.charAt(0).toUpperCase();
+    if (!user?.firstName) return 'U';
+    return user.firstName.charAt(0).toUpperCase();
   }, [user]);
 
   return (

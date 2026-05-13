@@ -1,9 +1,11 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Flame, Clock, Zap, ArrowRight, ShoppingCart, Star } from 'lucide-react';
+import { Flame, Clock, Zap, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { getDesignIllustration } from '@/lib/design-api';
+import { SmartImage } from '@/components/ui/smart-image';
 
 interface Deal {
   id: number;
@@ -56,6 +58,9 @@ export default function Deals() {
     { id: 8, name: 'GoPro Hero 11', originalPrice: 499, discountedPrice: 349, discount: 30, timeLeft: '3h', soldCount: 98, totalAvailable: 150, emoji: '📷', badge: 'Mejor' },
   ];
 
+  const featured = deals.slice(0, 2);
+  const restDeals = deals.slice(2);
+
   return (
     <main className="min-h-screen bg-[#071425]">
       {/* Hero */}
@@ -104,17 +109,80 @@ export default function Deals() {
         </div>
       </div>
 
-      {/* Grid */}
-      <div className="container mx-auto px-4 py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-          {deals.map((deal, idx) => {
+      <div className="container mx-auto px-4 py-12 space-y-8">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {featured.map((deal, idx) => {
             const progressPercent = (deal.soldCount / deal.totalAvailable) * 100;
             return (
               <motion.div
                 key={deal.id}
                 initial={{ opacity: 0, y: 24 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.06 }}
+                transition={{ duration: 0.5, delay: idx * 0.08 }}
+                whileHover={{ y: -8 }}
+              >
+                <Link href={`/products/${deal.id}`}>
+                  <div className="group relative overflow-hidden rounded-3xl border border-white/15 bg-[#0d1c31]/95 p-6">
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_10%_15%,rgba(239,68,68,0.2),transparent_35%),radial-gradient(circle_at_88%_10%,rgba(251,146,60,0.18),transparent_35%)]" />
+                    <div className="relative z-10 flex items-start justify-between gap-6">
+                      <div className="flex-1">
+                        <p className="inline-flex items-center rounded-full border border-red-500/35 bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-200">
+                          Oferta destacada
+                        </p>
+                        <h2 className="mt-3 text-2xl font-black text-white">{deal.name}</h2>
+                        <div className="mt-4 flex items-end gap-3">
+                          <span className="text-4xl font-black text-red-400">${deal.discountedPrice.toFixed(2)}</span>
+                          <span className="pb-1 text-base text-white/40 line-through">${deal.originalPrice.toFixed(2)}</span>
+                        </div>
+                        <p className="mt-1 text-sm font-semibold text-primary">Ahorro total: ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}</p>
+
+                        <div className="mt-5">
+                          <div className="mb-2 flex justify-between text-xs text-white/55">
+                            <span>Disponibilidad</span>
+                            <span>{deal.soldCount}/{deal.totalAvailable} vendidos</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-white/10">
+                            <motion.div
+                              initial={{ width: 0 }}
+                              animate={{ width: `${progressPercent}%` }}
+                              transition={{ duration: 1, delay: 0.1 }}
+                              className="h-2 rounded-full bg-gradient-to-r from-red-500 to-orange-400"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-3">
+                        <div className="h-28 w-28 overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-2">
+                          <SmartImage
+                            src={getDesignIllustration(`deal-featured-${deal.id}-${deal.name}`)}
+                            alt={deal.name}
+                            width={112}
+                            height={112}
+                            className="h-full w-full rounded-xl object-cover"
+                          />
+                        </div>
+                        <div className="rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-xs text-white/80">
+                          Termina en {deal.timeLeft}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {restDeals.map((deal, idx) => {
+            const progressPercent = (deal.soldCount / deal.totalAvailable) * 100;
+            return (
+              <motion.div
+                key={deal.id}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: idx * 0.05 }}
                 whileHover={{ y: -8, scale: 1.02 }}
               >
                 <Link href={`/products/${deal.id}`}>
@@ -124,9 +192,15 @@ export default function Deals() {
                       <motion.div
                         animate={{ scale: [1, 1.05, 1] }}
                         transition={{ duration: 3, repeat: Infinity, delay: idx * 0.2 }}
-                        className="text-6xl"
+                        className="h-full w-full"
                       >
-                        {deal.emoji}
+                        <SmartImage
+                          src={getDesignIllustration(`deal-${deal.id}-${deal.name}`)}
+                          alt={deal.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover"
+                        />
                       </motion.div>
 
                       <div className="absolute top-3 left-3 rounded-full bg-red-500 px-3 py-1 text-xs font-bold text-white shadow-lg">

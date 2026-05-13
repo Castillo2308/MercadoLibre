@@ -1,68 +1,81 @@
-'use client';
+"use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, ChevronDown, Star, Shield, Zap, Search, SlidersHorizontal, X } from 'lucide-react';
-import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from "framer-motion";
+import { Filter, ChevronDown, Star, Shield, Zap, SlidersHorizontal, X } from "lucide-react";
+import Link from "next/link";
+import { useState, useEffect } from "react";
+import { SmartImage } from "@/components/ui/smart-image";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  seller: string;
-  rating: number;
-  reviews: number;
-  category?: string;
-  emoji: string;
-}
+type ApiProduct = {
+  id: string;
+  title: string;
+  price: string | number;
+  seller?: { firstName?: string; lastName?: string } | null;
+  averageRating?: number;
+  reviewCount?: number;
+  category?: { id?: string; slug?: string; name?: string } | null;
+  images?: { imageUrl: string }[];
+};
 
-const ALL_PRODUCTS: Product[] = [
-  { id: 1, name: 'iPhone 14 Pro - 256GB', price: 999.99, seller: 'Apple Store', rating: 4.9, reviews: 342, category: 'smartphones', emoji: '📱' },
-  { id: 2, name: 'Samsung Galaxy S23', price: 899.99, seller: 'Samsung Official', rating: 4.8, reviews: 289, category: 'smartphones', emoji: '📱' },
-  { id: 3, name: 'Google Pixel 7 Pro', price: 799.99, seller: 'Google Store', rating: 4.7, reviews: 156, category: 'smartphones', emoji: '📱' },
-  { id: 4, name: 'OnePlus 11 Pro', price: 699.99, seller: 'OnePlus Direct', rating: 4.6, reviews: 98, category: 'smartphones', emoji: '📱' },
-  { id: 5, name: 'Xiaomi 13 Ultra', price: 649.99, seller: 'Xiaomi Global', rating: 4.5, reviews: 203, category: 'smartphones', emoji: '📱' },
-  { id: 6, name: 'Motorola Edge 40', price: 549.99, seller: 'Motorola Store', rating: 4.4, reviews: 127, category: 'smartphones', emoji: '📱' },
-  { id: 7, name: 'Nothing Phone 1', price: 469.99, seller: 'Nothing Store', rating: 4.3, reviews: 85, category: 'smartphones', emoji: '📱' },
-  { id: 8, name: 'Realme GT 3', price: 399.99, seller: 'Realme Direct', rating: 4.2, reviews: 142, category: 'smartphones', emoji: '📱' },
-  { id: 9, name: 'iPad Pro 12.9 - 256GB', price: 1199.99, seller: 'Apple Store', rating: 4.9, reviews: 421, category: 'tablets', emoji: '📱' },
-  { id: 10, name: 'Samsung Galaxy Tab S9', price: 849.99, seller: 'Samsung Official', rating: 4.7, reviews: 318, category: 'tablets', emoji: '📱' },
-];
-
-export default function SearchPage({ searchParams }: { searchParams: { q?: string } }) {
-  const query = (searchParams.q || '').toLowerCase();
+export default function SearchPage({ searchParams }: { searchParams: { q?: string; category?: string } }) {
+  const qParam = (searchParams.q || '').toString();
+  const categoryParam = (searchParams.category || '').toString();
   const [priceRange, setPriceRange] = useState('all');
   const [sortBy, setSortBy] = useState('relevance');
   const [showFilters, setShowFilters] = useState(false);
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>(ALL_PRODUCTS);
+  const [filteredProducts, setFilteredProducts] = useState<ApiProduct[]>([]);
+  const [allFetched, setAllFetched] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let results = ALL_PRODUCTS;
-    if (query) {
-      results = results.filter(
-        (p) => p.name.toLowerCase().includes(query) || p.seller.toLowerCase().includes(query) || p.category?.toLowerCase().includes(query)
-      );
-    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const params = new URLSearchParams();
+        if (categoryParam) params.set('category', categoryParam);
+        if (qParam) params.set('q', qParam);
+        params.set('take', '100');
+        const res = await fetch(`/api/products?${params.toString()}`);
+        const data = await res.json();
+        if (!cancelled) {
+          setAllFetched(data || []);
+          setFilteredProducts(data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching products', err);
+        if (!cancelled) setAllFetched([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [qParam, categoryParam]);
+
+  useEffect(() => {
+    let results = [...allFetched];
+    // apply price filters
     if (priceRange !== 'all') {
       results = results.filter((p) => {
+        const price = Number(p.price || 0);
         switch (priceRange) {
-          case '0-100': return p.price <= 100;
-          case '100-500': return p.price > 100 && p.price <= 500;
-          case '500-1000': return p.price > 500 && p.price <= 1000;
-          case '1000': return p.price > 1000;
+          case '0-100': return price <= 100;
+          case '100-500': return price > 100 && price <= 500;
+          case '500-1000': return price > 500 && price <= 1000;
+          case '1000': return price > 1000;
           default: return true;
         }
       });
     }
     const sorted = [...results];
     switch (sortBy) {
-      case 'price-asc': sorted.sort((a, b) => a.price - b.price); break;
-      case 'price-desc': sorted.sort((a, b) => b.price - a.price); break;
-      case 'rating': sorted.sort((a, b) => b.rating - a.rating); break;
-      case 'newest': sorted.sort((a, b) => b.id - a.id); break;
+      case 'price-asc': sorted.sort((a, b) => Number(a.price) - Number(b.price)); break;
+      case 'price-desc': sorted.sort((a, b) => Number(b.price) - Number(a.price)); break;
+      case 'rating': sorted.sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0)); break;
+      case 'newest': sorted.sort((a, b) => (a.id > b.id ? -1 : 1)); break;
     }
     setFilteredProducts(sorted);
-  }, [query, priceRange, sortBy]);
+  }, [allFetched, priceRange, sortBy]);
 
   return (
     <div className="min-h-screen bg-[#071425]">
@@ -73,10 +86,10 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">Busqueda</h1>
             <p className="text-white/50 text-lg">
-              {query && filteredProducts.length > 0
-                ? `${filteredProducts.length} resultados para: "${searchParams.q}"`
-                : query
-                  ? `Sin resultados para: "${searchParams.q}"`
+              {qParam && filteredProducts.length > 0
+                ? `${filteredProducts.length} resultados para: "${qParam}"`
+                : qParam
+                  ? `Sin resultados para: "${qParam}"`
                   : `${filteredProducts.length} productos disponibles`}
             </p>
           </motion.div>
@@ -180,7 +193,13 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
               </div>
             </div>
 
-            {filteredProducts.length > 0 ? (
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {Array.from({ length: 6 }).map((_, idx) => (
+                  <CardSkeleton key={idx} />
+                ))}
+              </div>
+            ) : filteredProducts.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 <AnimatePresence>
                   {filteredProducts.map((product, idx) => (
@@ -197,34 +216,38 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                         <div className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0d1c31] hover:border-white/20 transition-all duration-300 hover:shadow-[0_20px_40px_rgba(0,0,0,0.4)] h-full flex flex-col">
                           {/* Image */}
                           <div className="relative bg-gradient-to-br from-[#102036] to-[#0d1c31] h-44 flex items-center justify-center overflow-hidden">
-                            <div className="text-5xl group-hover:scale-125 transition-transform duration-400">
-                              {product.emoji}
-                            </div>
-                            <div className="absolute top-3 right-3 rounded-full bg-red-500 px-2.5 py-1 text-xs font-bold text-white">
-                              -15%
-                            </div>
+                            {product.images && product.images[0] ? (
+                              <SmartImage
+                                src={product.images[0].imageUrl}
+                                alt={product.title}
+                                fill
+                                sizes="(max-width: 768px) 100vw, 33vw"
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="text-5xl group-hover:scale-125 transition-transform duration-400">📦</div>
+                            )}
                             <div className="absolute inset-0 bg-gradient-to-t from-[#0d1c31]/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           </div>
 
                           <div className="p-4 flex flex-col flex-1">
                             <h3 className="font-semibold text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors text-sm leading-snug">
-                              {product.name}
+                              {product.title}
                             </h3>
 
                             <div className="flex items-center gap-1.5 mb-2">
                               {[...Array(5)].map((_, i) => (
-                                <Star key={i} size={12} className={i < Math.floor(product.rating) ? 'fill-primary text-primary' : 'text-white/20'} />
+                                <Star key={i} size={12} className={i < Math.floor(product.averageRating || 0) ? 'fill-primary text-primary' : 'text-white/20'} />
                               ))}
-                              <span className="text-xs text-white/40">({product.reviews})</span>
+                              <span className="text-xs text-white/40">({product.reviewCount || 0})</span>
                             </div>
 
                             <p className="text-xs text-white/40 mb-3 flex items-center gap-1">
-                              <Shield size={11} className="text-primary" /> {product.seller}
+                              <Shield size={11} className="text-primary" /> {product.seller ? `${product.seller.firstName || ''} ${product.seller.lastName || ''}` : 'Vendedor'}
                             </p>
 
                             <div className="mt-auto">
-                              <p className="text-2xl font-bold text-white">${product.price.toFixed(2)}</p>
-                              <p className="text-xs text-white/30 line-through">${(product.price * 1.17).toFixed(2)}</p>
+                              <p className="text-2xl font-bold text-white">${Number(product.price).toFixed(2)}</p>
                             </div>
 
                             <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 py-1.5 text-xs text-primary font-semibold text-center">

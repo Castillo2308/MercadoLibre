@@ -4,42 +4,65 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState } from 'react';
 import { User, Mail, Lock, Phone } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/context/AuthContext';
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    fullName: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     password: '',
     confirmPassword: '',
   });
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const { register } = useAuth();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
 
     if (Object.values(formData).some((val) => !val)) {
       setError('Por favor completa todos los campos');
+      setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
       setError('Las contraseñas no coinciden');
+      setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
       setError('La contraseña debe tener al menos 6 caracteres');
+      setLoading(false);
       return;
     }
 
-    console.log('Register:', formData);
+    try {
+      await register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+      });
+      router.push('/auth/login');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al registrarse');
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,48 +87,67 @@ export default function Register() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-white/75">Nombre Completo</label>
-            <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
-              <User size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                placeholder="Tu nombre completo"
-                className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
-              />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-white/75">Nombre</label>
+              <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
+                <User size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                <input
+                  type="text"
+                  name="firstName"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  placeholder="Tu nombre"
+                  className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-white/75">Apellidos</label>
+              <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
+                <User size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                <input
+                  type="text"
+                  name="lastName"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  placeholder="Tus apellidos"
+                  className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
+                />
+              </div>
             </div>
           </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-white/75">Correo Electronico</label>
-            <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
-              <Mail size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="tu@email.com"
-                className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
-              />
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-white/75">Correo Electronico</label>
+              <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
+                <Mail size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="tu@email.com"
+                  className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-white/75">Telefono</label>
-            <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
-              <Phone size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+34 123 456 789"
-                className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
-              />
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-white/75">Numero de Celular</label>
+              <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
+                <Phone size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="+34 123 456 789"
+                  className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
+                />
+              </div>
             </div>
           </div>
 
@@ -141,9 +183,10 @@ export default function Register() {
 
           <button
             type="submit"
-            className="w-full rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110"
+            disabled={loading}
+            className="w-full rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
           >
-            Crear Cuenta
+            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
           </button>
         </form>
 

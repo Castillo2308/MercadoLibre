@@ -1,11 +1,20 @@
 'use client';
 
-import { Search, Send, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Search, Send, UserPlus, Sparkles, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { getDesignAvatar } from '@/lib/design-api';
+import { SmartImage } from '@/components/ui/smart-image';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 
 interface Conversation {
-  id: string;
+  userId: string;
   name: string;
   email: string;
   lastMessage: string;
@@ -24,8 +33,9 @@ interface Message {
 
 export default function Messages() {
   const { user, isAuthenticated } = useAuth();
+  const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [selectedEmail, setSelectedEmail] = useState<string>('');
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
 
   const [messageText, setMessageText] = useState('');
@@ -35,7 +45,7 @@ export default function Messages() {
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const currentUserEmail = user?.email?.toLowerCase() || '';
+  const selectedFromQuery = searchParams.get('user') || '';
 
   const formatTime = (dateValue: Date | string) => {
     const date = new Date(dateValue);
@@ -53,14 +63,16 @@ export default function Messages() {
   };
 
   const fetchConversations = useCallback(async () => {
-    if (!currentUserEmail) return;
+    if (!user?.id) return;
 
     setLoadingConversations(true);
     try {
-      const response = await fetch(
-        `/api/messages?currentUserEmail=${encodeURIComponent(currentUserEmail)}`,
-        { cache: 'no-store' }
-      );
+      const response = await fetch('/api/messages', {
+        cache: 'no-store',
+        headers: {
+          'X-User-ID': user.id,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('No se pudieron cargar conversaciones');
@@ -68,7 +80,8 @@ export default function Messages() {
 
       const result = await response.json();
       const nextConversations: Conversation[] = (result.data || []).map((item: any) => {
-        const initials = item.otherUser.name
+        const baseName = item.otherUser.name || item.otherUser.email || 'Usuario';
+        const initials = baseName
           .split(' ')
           .map((part: string) => part[0])
           .join('')
@@ -76,7 +89,7 @@ export default function Messages() {
           .toUpperCase();
 
         return {
-          id: item.otherUser.id,
+          userId: item.otherUser.id,
           name: item.otherUser.name,
           email: item.otherUser.email,
           lastMessage: item.lastMessage,
@@ -88,26 +101,31 @@ export default function Messages() {
 
       setConversations(nextConversations);
 
-      if (!selectedEmail && nextConversations.length > 0) {
-        setSelectedEmail(nextConversations[0].email);
+      if (!selectedUserId && nextConversations.length > 0) {
+        setSelectedUserId(nextConversations[0].userId);
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoadingConversations(false);
     }
-  }, [currentUserEmail, selectedEmail]);
+  }, [selectedUserId, user?.id]);
 
-  const fetchMessages = useCallback(async (otherEmail: string) => {
-    if (!currentUserEmail || !otherEmail) return;
+  useEffect(() => {
+    if (!selectedFromQuery || selectedUserId) return;
+    setSelectedUserId(selectedFromQuery);
+  }, [selectedFromQuery, selectedUserId]);
+
+  const fetchMessages = useCallback(async (otherUserId: string) => {
+    if (!user?.id || !otherUserId) return;
 
     try {
-      const response = await fetch(
-        `/api/messages?currentUserEmail=${encodeURIComponent(
-          currentUserEmail
-        )}&otherUserEmail=${encodeURIComponent(otherEmail)}`,
-        { cache: 'no-store' }
-      );
+      const response = await fetch(`/api/messages?otherUserId=${encodeURIComponent(otherUserId)}`, {
+        cache: 'no-store',
+        headers: {
+          'X-User-ID': user.id,
+        },
+      });
 
       if (!response.ok) {
         throw new Error('No se pudieron cargar mensajes');
@@ -119,14 +137,14 @@ export default function Messages() {
         sender: item.sender,
         text: item.content,
         timestamp: new Date(item.createdAt),
-        isOwn: item.sender.email.toLowerCase() === currentUserEmail,
+        isOwn: item.sender.id === user.id,
       }));
 
       setMessages(parsedMessages);
     } catch (error) {
       console.error(error);
     }
-  }, [currentUserEmail]);
+  }, [user?.id]);
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -134,38 +152,42 @@ export default function Messages() {
   }, [isAuthenticated, fetchConversations]);
 
   useEffect(() => {
-    if (!selectedEmail) return;
-    fetchMessages(selectedEmail);
-  }, [selectedEmail, fetchMessages]);
+    if (!selectedUserId) return;
+    fetchMessages(selectedUserId);
+  }, [selectedUserId, fetchMessages]);
 
   useEffect(() => {
-    if (!isAuthenticated || !currentUserEmail) return;
+    if (!isAuthenticated || !user?.id) return;
 
     const interval = setInterval(() => {
       fetchConversations();
-      if (selectedEmail) {
-        fetchMessages(selectedEmail);
+      if (selectedUserId) {
+        fetchMessages(selectedUserId);
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, currentUserEmail, selectedEmail, fetchConversations, fetchMessages]);
+  }, [isAuthenticated, selectedUserId, fetchConversations, fetchMessages, user?.id]);
 
   const handleSendMessage = async () => {
     if (!messageText.trim()) return;
-    const destinationEmail = selectedEmail || newRecipientEmail.trim().toLowerCase();
-    if (!destinationEmail || !currentUserEmail) return;
+    if (!user?.id) return;
+
+    let recipientId = selectedUserId;
+    const destinationEmail = newRecipientEmail.trim().toLowerCase();
+    if (!recipientId && !destinationEmail) return;
 
     setSending(true);
     try {
       const response = await fetch('/api/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': user.id,
+        },
         body: JSON.stringify({
-          senderEmail: currentUserEmail,
-          senderName: user?.name,
-          recipientEmail: destinationEmail,
-          recipientName: newRecipientName || undefined,
+          recipientId: recipientId || undefined,
+          recipientEmail: recipientId ? undefined : destinationEmail,
           content: messageText,
         }),
       });
@@ -175,9 +197,18 @@ export default function Messages() {
       }
 
       setMessageText('');
-      setSelectedEmail(destinationEmail);
       await fetchConversations();
-      await fetchMessages(destinationEmail);
+
+      if (!recipientId && destinationEmail) {
+        const convo = conversations.find((item) => item.email.toLowerCase() === destinationEmail);
+        recipientId = convo?.userId || '';
+      }
+
+      if (recipientId) {
+        setSelectedUserId(recipientId);
+        await fetchMessages(recipientId);
+      }
+
       setNewRecipientEmail('');
       setNewRecipientName('');
     } catch (error) {
@@ -197,167 +228,230 @@ export default function Messages() {
     [conversations, searchQuery]
   );
 
-  const selectedConversation = conversations.find((c) => c.email === selectedEmail);
+  const selectedConversation = conversations.find((c) => c.userId === selectedUserId);
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="container mx-auto px-4 py-10">
-        <div className="mx-auto max-w-xl rounded-2xl border border-gray-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-gray-900">Inicia sesion para usar Mensajes</h2>
-          <p className="mt-2 text-gray-600">
-            La mensajeria ahora guarda conversaciones reales en la base de datos, por eso
-            necesitas una sesion activa.
-          </p>
+      <div className="min-h-screen bg-[#071425]">
+        <div className="container mx-auto px-4 py-16">
+          <Card className="mx-auto max-w-2xl rounded-3xl border-white/10 bg-[#0c1d31]/90 p-10 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-primary">
+              <ShieldCheck size={26} />
+            </div>
+            <h2 className="text-2xl font-black text-white">Inicia sesion para usar Mensajes</h2>
+            <p className="mt-2 text-white/65">
+              La mensajeria guarda conversaciones reales en la base de datos, por eso
+              necesitas una sesion activa.
+            </p>
+          </Card>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 h-[calc(100vh-300px)]">
-      <div className="bg-white rounded-lg shadow-lg flex h-full">
-        {/* Conversations List */}
-        <div className="w-full md:w-80 border-r border-gray-200 flex flex-col">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-2xl font-bold mb-4">Mensajes</h2>
-            <div className="relative">
-              <input
-                type="text"
+    <div className="min-h-screen bg-[#071425]">
+      <div className="relative overflow-hidden border-b border-white/10 py-12">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_24%,rgba(29,184,73,0.18),transparent_38%),radial-gradient(circle_at_82%_20%,rgba(255,214,0,0.18),transparent_42%),radial-gradient(circle_at_45%_85%,rgba(37,99,235,0.16),transparent_45%)]" />
+        <div className="container mx-auto px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative z-10 flex flex-col gap-3"
+          >
+            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
+              <MessageSquare size={14} className="text-primary" /> Mensajeria
+            </div>
+            <h1 className="text-4xl font-black text-white md:text-5xl">Conversaciones en vivo</h1>
+            <p className="max-w-2xl text-sm text-white/65">
+              Gestiona chats, crea nuevos contactos y recibe ayuda directa del soporte de Kivra.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <Badge className="border-white/20 bg-white/10 text-white/80">Mensajeria privada</Badge>
+              <Badge className="border-primary/30 bg-primary/10 text-primary">Tiempo real</Badge>
+              <Badge className="border-secondary/30 bg-secondary/10 text-secondary">Marketplace</Badge>
+            </div>
+          </motion.div>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-10 lg:py-12">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
+          <motion.section
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45 }}
+            className="rounded-3xl border border-white/12 bg-[#0c1d31]/90 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.38)]"
+          >
+            <div className="mb-4">
+              <div className="flex items-center gap-2 text-white">
+                <Sparkles size={18} className="text-secondary" />
+                <h2 className="text-xl font-black">Mensajes</h2>
+              </div>
+              <p className="text-xs text-white/55">{filteredConversations.length} conversaciones activas</p>
+            </div>
+
+            <div className="relative mb-4">
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+              <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar conversación..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
+                placeholder="Buscar conversacion..."
+                className="w-full rounded-xl border-white/15 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/40"
               />
-              <Search size={18} className="absolute right-3 top-2.5 text-gray-400" />
             </div>
 
-            <div className="mt-4 space-y-2 rounded-lg border border-gray-200 p-3">
-              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide flex items-center gap-2">
+            <Card className="rounded-xl border-white/10 bg-white/5 p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-white/60 flex items-center gap-2">
                 <UserPlus size={14} /> Nuevo chat
               </p>
-              <input
-                type="email"
-                value={newRecipientEmail}
-                onChange={(e) => setNewRecipientEmail(e.target.value)}
-                placeholder="Email del destinatario"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary text-sm"
-              />
-              <input
-                type="text"
-                value={newRecipientName}
-                onChange={(e) => setNewRecipientName(e.target.value)}
-                placeholder="Nombre (opcional)"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary text-sm"
-              />
-            </div>
-          </div>
-
-          <div className="overflow-y-auto flex-1">
-            {loadingConversations && (
-              <p className="p-4 text-sm text-gray-500">Cargando conversaciones...</p>
-            )}
-
-            {!loadingConversations && filteredConversations.length === 0 && (
-              <p className="p-4 text-sm text-gray-500">No hay conversaciones todavia.</p>
-            )}
-
-            {filteredConversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                onClick={() => setSelectedEmail(conversation.email)}
-                className={`p-4 border-b border-gray-100 cursor-pointer transition hover:bg-gray-50 ${
-                  selectedEmail === conversation.email ? 'bg-primary/10' : ''
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-10 h-10 bg-secondary text-white rounded-full flex items-center justify-center font-semibold text-sm">
-                      {conversation.avatar}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900">{conversation.name}</p>
-                      <p className="text-sm text-gray-600 truncate">
-                        {conversation.lastMessage}
-                      </p>
-                    </div>
-                  </div>
-                  {conversation.unread > 0 && (
-                    <span className="bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                      {conversation.unread}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-gray-500">{formatConversationTime(conversation.timestamp)}</p>
+              <div className="mt-2 space-y-2">
+                <Input
+                  value={newRecipientEmail}
+                  onChange={(e) => setNewRecipientEmail(e.target.value)}
+                  placeholder="Email del destinatario"
+                  className="w-full rounded-lg border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                />
+                <Input
+                  value={newRecipientName}
+                  onChange={(e) => setNewRecipientName(e.target.value)}
+                  placeholder="Nombre (opcional)"
+                  className="w-full rounded-lg border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                />
               </div>
-            ))}
-          </div>
-        </div>
+            </Card>
 
-        {/* Chat Area */}
-        <div className="flex flex-1 flex-col">
-          {/* Chat Header */}
-          <div className="p-4 border-b border-gray-200 bg-gray-50">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {selectedConversation?.name || newRecipientName || 'Selecciona una conversación'}
-            </h3>
-            <p className="text-sm text-gray-600">
-              {selectedConversation?.email || newRecipientEmail || 'Sin destinatario'}
-            </p>
-          </div>
+            <ScrollArea className="mt-4 max-h-[520px] pr-1">
+              {loadingConversations && (
+                <p className="p-3 text-xs text-white/50">Cargando conversaciones...</p>
+              )}
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.length === 0 && (
-              <p className="text-sm text-gray-500">Todavia no hay mensajes en esta conversacion.</p>
-            )}
+              {!loadingConversations && filteredConversations.length === 0 && (
+                <Card className="rounded-xl border-white/10 bg-white/5 p-4 text-center text-xs text-white/60">
+                  No hay conversaciones todavia.
+                </Card>
+              )}
 
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
-              >
-                <div
-                  className={`max-w-xs px-4 py-2 rounded-lg ${
-                    message.isOwn
-                      ? 'bg-secondary text-white rounded-br-none'
-                      : 'bg-gray-200 text-gray-900 rounded-bl-none'
-                  }`}
-                >
-                  <p className="text-sm">{message.text}</p>
-                  <p
-                    className={`text-xs mt-1 ${
-                      message.isOwn ? 'text-white/80' : 'text-gray-600'
+              <AnimatePresence>
+                {filteredConversations.map((conversation) => (
+                  <motion.button
+                    key={conversation.userId}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    onClick={() => setSelectedUserId(conversation.userId)}
+                    className={`w-full rounded-xl border px-3 py-3 text-left transition ${
+                      selectedUserId === conversation.userId
+                        ? 'border-primary/50 bg-primary/10 shadow-[0_8px_20px_rgba(29,184,73,0.15)]'
+                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
                     }`}
                   >
-                    {formatTime(message.timestamp)}
+                    <div className="flex items-center gap-3">
+                      <SmartImage
+                        src={getDesignAvatar(conversation.name)}
+                        alt={conversation.name}
+                        width={40}
+                        height={40}
+                        className="h-10 w-10 rounded-full border border-white/15 object-cover"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-white truncate">{conversation.name}</p>
+                        <p className="text-xs text-white/50 truncate">{conversation.lastMessage}</p>
+                      </div>
+                      {conversation.unread > 0 && (
+                        <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5">
+                          {conversation.unread}
+                        </Badge>
+                      )}
+                    </div>
+                    <p className="mt-2 text-[10px] text-white/40">{formatConversationTime(conversation.timestamp)}</p>
+                  </motion.button>
+                ))}
+              </AnimatePresence>
+            </ScrollArea>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.45 }}
+            className="rounded-3xl border border-white/12 bg-[#0c1d31]/90 shadow-[0_24px_60px_rgba(0,0,0,0.38)] flex min-h-[720px] flex-col"
+          >
+            <div className="border-b border-white/10 px-6 py-4 bg-white/[0.03]">
+              <div className="flex items-center gap-3">
+                <SmartImage
+                  src={getDesignAvatar(selectedConversation?.name || newRecipientName || 'Chat')}
+                  alt={selectedConversation?.name || newRecipientName || 'Chat'}
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 rounded-full border border-white/15 object-cover"
+                />
+                <div>
+                  <h3 className="text-lg font-bold text-white">
+                    {selectedConversation?.name || newRecipientName || 'Selecciona una conversacion'}
+                  </h3>
+                  <p className="text-xs text-white/55">
+                    {selectedConversation?.email || newRecipientEmail || 'Sin destinatario'}
                   </p>
                 </div>
               </div>
-            ))}
-          </div>
-
-          {/* Message Input */}
-          <div className="p-4 border-t border-gray-200">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSendMessage();
-                }}
-                placeholder="Escribe tu mensaje..."
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-secondary"
-              />
-              <button
-                onClick={handleSendMessage}
-                disabled={sending || (!selectedEmail && !newRecipientEmail.trim())}
-                className="bg-secondary text-white px-6 py-2 rounded-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-50"
-              >
-                <Send size={18} />
-              </button>
             </div>
-          </div>
+
+            <ScrollArea className="flex-1 px-6 py-6">
+              {messages.length === 0 && (
+                <Card className="rounded-2xl border-white/10 bg-white/5 p-6 text-center text-sm text-white/60">
+                  Todavia no hay mensajes en esta conversacion.
+                </Card>
+              )}
+
+              <AnimatePresence>
+                {messages.map((message) => (
+                  <motion.div
+                    key={message.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`mb-3 flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm shadow-lg md:max-w-[62%] ${
+                        message.isOwn
+                          ? 'bg-gradient-to-r from-primary to-secondary text-[#071425] rounded-br-md'
+                          : 'bg-white/10 text-white rounded-bl-md'
+                      }`}
+                    >
+                      <p>{message.text}</p>
+                      <p className={`text-[10px] mt-2 ${message.isOwn ? 'text-[#071425]/70' : 'text-white/60'}`}>
+                        {formatTime(message.timestamp)}
+                      </p>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </ScrollArea>
+
+            <div className="border-t border-white/10 bg-[#0a1a2d]/55 px-6 py-5 backdrop-blur">
+              <div className="flex gap-2">
+                <Input
+                  value={messageText}
+                  onChange={(e) => setMessageText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSendMessage();
+                  }}
+                  placeholder="Escribe tu mensaje..."
+                  className="flex-1 rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                />
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={sending || (!selectedUserId && !newRecipientEmail.trim())}
+                  className="rounded-xl bg-secondary px-4 py-2.5 text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+                >
+                  <Send size={18} />
+                </Button>
+              </div>
+            </div>
+          </motion.section>
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@
  */
 
 import prisma from "@/lib/prisma";
+import { Decimal } from '@prisma/client/runtime/library';
 
 // =====================================
 // USUARIOS
@@ -57,7 +58,8 @@ export async function updateUserProfile(userId: string, data: any) {
 export async function createProduct(data: {
   title: string;
   description?: string;
-  category: string;
+  categoryId: string;
+  sku: string;
   price: number;
   quantityAvailable: number;
   sellerId: string;
@@ -85,7 +87,7 @@ export async function createProduct(data: {
  * Obtener productos con filtros
  */
 export async function getProducts(filters?: {
-  category?: string;
+  categoryId?: string;
   minPrice?: number;
   maxPrice?: number;
   sellerId?: string;
@@ -98,7 +100,7 @@ export async function getProducts(filters?: {
   return await prisma.product.findMany({
     where: {
       isActive: true,
-      ...(filters?.category && { category: filters.category }),
+      ...(filters?.categoryId && { categoryId: filters.categoryId }),
       ...(filters?.sellerId && { sellerId: filters.sellerId }),
       ...(filters?.minPrice && {
         price: { gte: new Decimal(filters.minPrice) },
@@ -266,10 +268,14 @@ export async function createOrder(
   const shippingCost = subtotal > 100 ? 0 : 10; // Envío gratis > $100
   const totalAmount = subtotal + tax + shippingCost;
 
+  // Generar número de orden único
+  const orderNumber = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
   // Crear orden
   const order = await prisma.order.create({
     data: {
       buyerId: userId,
+      orderNumber,
       shippingAddress: data.shippingAddress,
       shippingCity: data.shippingCity,
       shippingState: data.shippingState,

@@ -17,8 +17,9 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
   const { isAuthenticated } = useAuth();
   const router = useRouter();
 
-  const productId = parseInt(params.id) || 1;
-  const isFavorite = isInWishlist(productId);
+  const productId = params.id;
+  const numericProductId = Number(params.id) || 0;
+  const isFavorite = isInWishlist(numericProductId);
 
   const product = {
     name: 'iPhone 14 Pro - 256GB',
@@ -32,10 +33,16 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
   };
 
   const handleFavoriteClick = () => {
-    toggleWishlist(productId, product.name);
+    if (numericProductId > 0) {
+      toggleWishlist(numericProductId, product.name);
+    }
   };
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      router.push(`/auth/login?redirect=${encodeURIComponent(`/products/${params.id}`)}`);
+      return;
+    }
     addToCart(productId, product.name, product.price, quantity);
     setShowSuccessMessage(true);
     setTimeout(() => setShowSuccessMessage(false), 2000);

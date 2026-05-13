@@ -1,33 +1,66 @@
-'use client';
+"use client";
 
-import { motion } from 'framer-motion';
-import { Smartphone, Laptop, Shirt, Home, BookOpen, Dumbbell, Gamepad2, Music, Camera, Watch, Utensils, Car, ArrowRight, Sparkles, LucideIcon } from 'lucide-react';
-import Link from 'next/link';
+import { motion } from "framer-motion";
+import { ArrowRight, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
+import { SmartImage } from "@/components/ui/smart-image";
+import { CardSkeleton } from "@/components/ui/card-skeleton";
 
-interface Category {
+type ApiCategory = {
   id: string;
   name: string;
-  icon: LucideIcon;
-  description: string;
-  productCount: number;
-  gradient: string;
-}
+  slug?: string;
+  icon?: string | null;
+  _count?: { products: number };
+};
+
+type ApiProduct = {
+  id: string;
+  title: string;
+  price: number;
+  mainImageUrl?: string | null;
+  category?: { id: string; slug?: string; name?: string } | null;
+};
 
 export default function Categories() {
-  const categories: Category[] = [
-    { id: 'electronics', name: 'Electronica', icon: Smartphone, description: 'Telefonos, computadoras y accesorios', productCount: 15234, gradient: 'from-blue-500/30 to-cyan-500/10' },
-    { id: 'computers', name: 'Computadoras', icon: Laptop, description: 'Laptops, desktops y componentes', productCount: 8945, gradient: 'from-emerald-500/30 to-teal-500/10' },
-    { id: 'clothing', name: 'Ropa y Calzado', icon: Shirt, description: 'Prendas de moda para toda la familia', productCount: 42156, gradient: 'from-pink-500/30 to-rose-500/10' },
-    { id: 'home', name: 'Hogar', icon: Home, description: 'Muebles y decoracion para tu hogar', productCount: 23845, gradient: 'from-amber-500/30 to-yellow-500/10' },
-    { id: 'books', name: 'Libros', icon: BookOpen, description: 'Libros nuevos y usados de toda clase', productCount: 18234, gradient: 'from-green-500/30 to-lime-500/10' },
-    { id: 'sports', name: 'Deportes', icon: Dumbbell, description: 'Equipamiento y ropa deportiva', productCount: 12543, gradient: 'from-orange-500/30 to-red-500/10' },
-    { id: 'gaming', name: 'Videojuegos', icon: Gamepad2, description: 'Juegos, consolas y accesorios', productCount: 9876, gradient: 'from-cyan-500/30 to-blue-500/10' },
-    { id: 'audio', name: 'Audio y Musica', icon: Music, description: 'Auriculares, parlantes y equipos', productCount: 7234, gradient: 'from-fuchsia-500/30 to-pink-500/10' },
-    { id: 'photography', name: 'Fotografia', icon: Camera, description: 'Camaras y accesorios profesionales', productCount: 5432, gradient: 'from-teal-500/30 to-cyan-500/10' },
-    { id: 'watches', name: 'Relojes', icon: Watch, description: 'Relojes premium y accesorios', productCount: 6789, gradient: 'from-yellow-500/30 to-amber-500/10' },
-    { id: 'kitchen', name: 'Cocina', icon: Utensils, description: 'Electrodomesticos y utensilios', productCount: 11234, gradient: 'from-lime-500/30 to-green-500/10' },
-    { id: 'automotive', name: 'Automocion', icon: Car, description: 'Accesorios y repuestos para vehiculos', productCount: 8765, gradient: 'from-red-500/30 to-orange-500/10' },
-  ];
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [products, setProducts] = useState<ApiProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    void (async () => {
+      try {
+        const [catRes, prodRes] = await Promise.all([
+          fetch('/api/categories'),
+          fetch('/api/products'),
+        ]);
+
+        const cats = await catRes.json();
+        const prods = await prodRes.json();
+
+        setCategories(cats || []);
+        setProducts(prods || []);
+      } catch (err) {
+        // silenciar: seguir con datos vacios
+        setCategories([]);
+        setProducts([]);
+        console.error('Error cargando categorias/productos', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const productsByCategory = useMemo(() => {
+    const map: Record<string, ApiProduct[]> = {};
+    for (const p of products) {
+      const key = p.category?.slug || p.category?.id || 'uncategorized';
+      map[key] = map[key] || [];
+      if (map[key].length < 4) map[key].push(p);
+    }
+    return map;
+  }, [products]);
 
   return (
     <main className="min-h-screen bg-[#071425]">
@@ -40,23 +73,30 @@ export default function Categories() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white/80 backdrop-blur mb-6">
               <Sparkles size={14} className="text-primary" />
-              Mas de 170,000 productos disponibles
+              Mas de {categories.reduce((s, c) => s + (c._count?.products || 0), 0).toLocaleString()} productos disponibles
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">
               Explorar por
               <span className="block text-primary">Categorias</span>
             </h1>
             <p className="text-white/55 text-xl max-w-2xl">
-              Encuentra exactamente lo que buscas entre nuestras categorias con miles de productos verificados.
+              Encuentra exactamente lo que buscas entre nuestras categorias con productos sincronizados desde la base de datos.
             </p>
           </motion.div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 py-16">
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-16">
+            {Array.from({ length: 8 }).map((_, idx) => (
+              <CardSkeleton key={idx} />
+            ))}
+          </div>
+        ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 mb-16">
           {categories.map((category, idx) => {
-            const Icon = category.icon;
+            const sample = productsByCategory[category.slug || category.id] || [];
             return (
               <motion.div
                 key={category.id}
@@ -65,25 +105,47 @@ export default function Categories() {
                 transition={{ duration: 0.5, delay: idx * 0.04 }}
                 whileHover={{ y: -8, scale: 1.02 }}
               >
-                <Link href={`/search?category=${category.id}`}>
-                  <div className={`relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br ${category.gradient} p-6 h-full cursor-pointer group bg-[#0d1c31]`}>
+                <Link href={`/search?category=${category.slug || category.id}`}>
+                  <div className={`relative overflow-hidden rounded-2xl border border-white/10 p-6 h-full cursor-pointer group bg-[#0d1c31]`}>
                     <div className="absolute inset-0 bg-[#0d1c31]/60 group-hover:bg-[#0d1c31]/40 transition-all duration-300" />
 
                     <div className="relative z-10">
                       <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/15 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-primary/20 transition-all duration-300 shadow-lg">
-                        <Icon size={26} className="text-white group-hover:text-primary transition-colors" />
+                        <span className="text-white text-xl">{category.icon || '🛍️'}</span>
                       </div>
 
                       <h3 className="text-xl font-bold text-white mb-2 group-hover:text-primary transition-colors duration-200">
                         {category.name}
                       </h3>
                       <p className="text-white/50 text-sm mb-5 line-clamp-2 leading-relaxed">
-                        {category.description}
+                        {category._count?.products || 0} articulos disponibles
                       </p>
+
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        {sample.length > 0 ? (
+                          sample.map((p) => (
+                            <div key={p.id} className="h-16 w-16 rounded-lg bg-gray-100 overflow-hidden">
+                              {p.mainImageUrl ? (
+                                <SmartImage
+                                  src={p.mainImageUrl}
+                                  alt={p.title}
+                                  width={64}
+                                  height={64}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-full w-full bg-gray-200" />
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="text-xs text-white/40">Sin productos de muestra</div>
+                        )}
+                      </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-white/10">
                         <p className="text-xs font-medium text-white/35">
-                          {category.productCount.toLocaleString()} articulos
+                          {category._count?.products?.toLocaleString() || 0} articulos
                         </p>
                         <motion.div
                           whileHover={{ x: 4 }}
@@ -101,6 +163,7 @@ export default function Categories() {
             );
           })}
         </div>
+        )}
 
         {/* Stats Bar */}
         <motion.div
@@ -111,7 +174,7 @@ export default function Categories() {
         >
           {[
             { value: '170K+', label: 'Productos activos' },
-            { value: '12', label: 'Categorias' },
+            { value: categories.length.toString(), label: 'Categorias' },
             { value: '98%', label: 'Satisfaccion' },
             { value: '24h', label: 'Soporte' },
           ].map((stat, idx) => (

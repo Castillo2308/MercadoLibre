@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "tw-animate-css";
+
 /* Base Styles */
 * {
   @apply box-border;
@@ -24,6 +26,32 @@ body {
   @apply text-white overflow-x-hidden;
 }
 
+/* CSS Custom Properties */
+@layer base {
+  :root {
+    --border-border: rgba(255, 255, 255, 0.14);
+    --background: #071425;
+    --foreground: #ffffff;
+    --card: rgba(15, 33, 57, 0.9);
+    --card-foreground: #ffffff;
+    --primary: #1DB849;
+    --primary-foreground: #ffffff;
+    --secondary: #1f2937;
+    --secondary-foreground: #ffffff;
+    --accent: #FF6B6B;
+    --accent-foreground: #ffffff;
+    --muted: rgba(255, 255, 255, 0.2);
+    --muted-foreground: rgba(255, 255, 255, 0.7);
+    --border: rgba(255, 255, 255, 0.14);
+    --input: rgba(255, 255, 255, 0.1);
+    --radius: 0.5rem;
+  }
+
+  * {
+    border-color: var(--border-border);
+  }
+}
+
 /* Unified visual language based on Home palette */
 @layer base {
   .theme-unified .bg-white {
@@ -39,6 +67,10 @@ body {
   .theme-unified .border-gray-100,
   .theme-unified .border-gray-200,
   .theme-unified .border-gray-300 {
+    border-color: rgba(255, 255, 255, 0.14) !important;
+  }
+
+  .theme-unified .border-border {
     border-color: rgba(255, 255, 255, 0.14) !important;
   }
 
@@ -64,6 +96,104 @@ body {
 
   .theme-unified .to-white {
     --tw-gradient-to: #0f2139 var(--tw-gradient-to-position) !important;
+  }
+}
+
+@layer components {
+  /* Glass morphism effect */
+  .glass {
+    @apply backdrop-blur-md bg-white/10 border border-white/20;
+  }
+
+  .glass-dark {
+    @apply backdrop-blur-md bg-black/30 border border-white/10;
+  }
+
+  /* Card styles */
+  .card-gradient {
+    @apply bg-gradient-to-br from-slate-900/40 to-slate-800/40 backdrop-blur-sm border border-slate-700/50 rounded-lg;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:border-primary/50;
+  }
+
+  /* Button styles */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-primary/20 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply bg-secondary hover:bg-secondary-dark text-white font-semibold py-2 px-6 rounded-lg transition-all duration-300;
+  }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary hover:bg-primary/10 font-semibold py-2 px-6 rounded-lg transition-all duration-300;
+  }
+
+  /* Input styles */
+  .input-modern {
+    @apply w-full px-4 py-3 bg-white/5 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all duration-300;
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+
+  /* Badge styles */
+  .badge-success {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success/20 text-success;
+  }
+
+  .badge-warning {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning/20 text-warning;
+  }
+
+  .badge-error {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-error/20 text-error;
+  }
+
+  /* Scrollbar styles */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(29, 184, 73, 0.3);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(29, 184, 73, 0.5);
+  }
+}
+
+/* Animations */
+@layer utilities {
+  .animate-fade-in-up {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out;
+  }
+
+  .animate-shimmer-slow {
+    animation: shimmer 3s infinite;
+  }
+
+  .hover-lift {
+    @apply hover:-translate-y-1 transition-transform duration-300;
+  }
+
+  .blur-glass {
+    backdrop-filter: blur(10px);
   }
 }
 

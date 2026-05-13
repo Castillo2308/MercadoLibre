@@ -1,34 +1,17 @@
 'use client';
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, ShoppingCart, Star, ArrowRight, Sparkles, Trash2 } from 'lucide-react';
+import { Heart, ShoppingCart, ArrowRight, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
-
-interface FavoriteProduct {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice: number;
-  seller: string;
-  rating: number;
-  emoji: string;
-  badge: string;
-}
+import { useWishlist } from '@/hooks/useWishlist';
+import { getDesignIllustration } from '@/lib/design-api';
+import { SmartImage } from '@/components/ui/smart-image';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 export default function Favorites() {
-  const [favorites, setFavorites] = useState<FavoriteProduct[]>([
-    { id: 1, name: 'Laptop Dell XPS 13', price: 999.99, originalPrice: 1299.99, seller: 'TechStore', rating: 4.8, emoji: '💻', badge: 'Oferta' },
-    { id: 2, name: 'iPhone 14 Pro', price: 1099.99, originalPrice: 1199.99, seller: 'Apple Authorized', rating: 4.9, emoji: '📱', badge: 'Popular' },
-    { id: 3, name: 'AirPods Pro', price: 249.99, originalPrice: 329.99, seller: 'ElectronicsHub', rating: 4.7, emoji: '🎧', badge: 'Top' },
-    { id: 4, name: 'iPad Air', price: 599.99, originalPrice: 749.99, seller: 'TechStore', rating: 4.8, emoji: '📱', badge: 'Nuevo' },
-    { id: 5, name: 'Sony WH-1000XM5', price: 279.99, originalPrice: 399.99, seller: 'SoundWorld', rating: 4.9, emoji: '🎧', badge: 'Flash' },
-    { id: 6, name: 'MacBook Air M2', price: 1099.99, originalPrice: 1299.99, seller: 'Apple Store', rating: 4.9, emoji: '💻', badge: 'Premium' },
-  ]);
-
-  const removeFavorite = (id: number) => {
-    setFavorites(favorites.filter((item) => item.id !== id));
-  };
+  const { wishlist, removeFromWishlist, loaded } = useWishlist();
 
   return (
     <main className="min-h-screen bg-[#071425]">
@@ -42,20 +25,45 @@ export default function Favorites() {
             <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300 mb-5">
               <Heart size={13} className="fill-red-400 text-red-400" />
               Tu lista de deseos
+              <Badge className="bg-white/10 text-white/80 border-white/20">{wishlist.length}</Badge>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-3">
               Mis
               <span className="block text-red-400">Favoritos</span>
             </h1>
             <p className="text-white/50 text-lg">
-              {favorites.length} producto{favorites.length !== 1 ? 's' : ''} guardado{favorites.length !== 1 ? 's' : ''}
+              {wishlist.length} producto{wishlist.length !== 1 ? 's' : ''} guardado{wishlist.length !== 1 ? 's' : ''}
             </p>
           </motion.div>
         </div>
       </section>
 
       <div className="container mx-auto px-4 py-12">
-        {favorites.length === 0 ? (
+        {loaded && wishlist.length > 0 && (
+          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Card className="rounded-2xl border-white/10 bg-[#0d1c31]/90 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/45">Guardados</p>
+              <p className="mt-1 text-2xl font-black text-white">{wishlist.length}</p>
+            </Card>
+            <Card className="rounded-2xl border-white/10 bg-[#0d1c31]/90 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/45">Listos para comparar</p>
+              <p className="mt-1 text-2xl font-black text-primary">{wishlist.length}</p>
+            </Card>
+            <Card className="rounded-2xl border-white/10 bg-[#0d1c31]/90 p-4">
+              <p className="text-xs uppercase tracking-wide text-white/45">Accion sugerida</p>
+              <p className="mt-1 text-sm font-semibold text-white/80">Mover al carrito</p>
+            </Card>
+          </div>
+        )}
+
+        {!loaded ? (
+          <Card className="rounded-3xl border-white/10 bg-[#0d1c31] text-center py-24 px-8">
+            <CardContent>
+              <div className="text-5xl mb-4">✨</div>
+              <p className="text-white/60">Cargando favoritos...</p>
+            </CardContent>
+          </Card>
+        ) : wishlist.length === 0 ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -72,15 +80,17 @@ export default function Favorites() {
             <p className="text-white/50 mb-8 max-w-sm mx-auto">
               Haz click en el corazon de cualquier producto para agregarlo a tu lista de deseos.
             </p>
-            <Link href="/" className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-semibold text-[#071425] transition hover:brightness-105">
-              Explorar Productos <ArrowRight size={18} />
-            </Link>
+            <Button asChild className="bg-primary text-[#071425] hover:brightness-105">
+              <Link href="/">
+                Explorar Productos <ArrowRight size={18} className="ml-2" />
+              </Link>
+            </Button>
           </motion.div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
               <AnimatePresence>
-                {favorites.map((product, idx) => (
+                {wishlist.map((product, idx) => (
                   <motion.div
                     key={product.id}
                     layout
@@ -94,63 +104,52 @@ export default function Favorites() {
                     {/* Image */}
                     <div className="relative bg-gradient-to-br from-[#102036] to-[#0d1c31] h-48 flex items-center justify-center overflow-hidden">
                       <motion.div
-                        animate={{ rotate: [0, 5, -5, 0] }}
+                        animate={{ rotate: [0, 2, -2, 0], scale: [1, 1.03, 1] }}
                         transition={{ duration: 4, repeat: Infinity, delay: idx * 0.3 }}
-                        className="text-6xl group-hover:scale-110 transition-transform duration-300"
+                        className="h-full w-full group-hover:scale-110 transition-transform duration-300"
                       >
-                        {product.emoji}
+                        <SmartImage
+                          src={getDesignIllustration(`favorite-${product.id}-${product.name}`)}
+                          alt={product.name}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
+                          className="object-cover"
+                        />
                       </motion.div>
 
-                      <div className="absolute top-3 left-3 rounded-full bg-white/10 border border-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur">
-                        {product.badge}
-                      </div>
-
                       <button
-                        onClick={() => removeFavorite(product.id)}
+                        onClick={() => removeFromWishlist(product.id)}
                         className="absolute top-3 right-3 h-9 w-9 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center hover:bg-red-500 hover:border-red-500 transition-all duration-200 group/btn"
                       >
                         <Heart size={16} className="fill-red-400 text-red-400 group-hover/btn:fill-white group-hover/btn:text-white transition-colors" />
                       </button>
 
-                      <div className="absolute bottom-3 right-3 rounded-full bg-primary/20 px-2.5 py-1 text-xs font-bold text-primary">
-                        -{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}%
-                      </div>
-
                       <div className="absolute inset-0 bg-gradient-to-t from-[#0d1c31]/70 to-transparent" />
                     </div>
 
                     {/* Content */}
-                    <div className="p-4">
+                    <div className="p-4 space-y-3">
                       <Link href={`/products/${product.id}`}>
                         <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-primary transition-colors cursor-pointer text-sm">
                           {product.name}
                         </h3>
                       </Link>
 
-                      <div className="flex items-center gap-1.5 mb-2">
-                        {[...Array(5)].map((_, i) => (
-                          <Star key={i} size={12} className={i < Math.floor(product.rating) ? 'fill-primary text-primary' : 'text-white/20'} />
-                        ))}
-                        <span className="text-xs text-white/40">({product.rating})</span>
-                      </div>
-
-                      <p className="text-xs text-white/40 mb-3">{product.seller}</p>
-
-                      <div className="mb-4">
-                        <p className="text-2xl font-bold text-white">${product.price.toFixed(2)}</p>
-                        <p className="text-xs text-white/30 line-through">${product.originalPrice.toFixed(2)}</p>
+                      <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs text-white/60">
+                        Guardado para revisar despues
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <button className="rounded-xl bg-primary/10 border border-primary/20 text-primary py-2.5 text-xs font-semibold hover:bg-primary hover:text-[#071425] transition-all duration-200 flex items-center justify-center gap-1.5">
-                          <ShoppingCart size={13} /> Agregar
-                        </button>
-                        <button
-                          onClick={() => removeFavorite(product.id)}
-                          className="rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 py-2.5 text-xs font-semibold hover:bg-red-500 hover:text-white transition-all duration-200 flex items-center justify-center gap-1.5"
+                        <Button className="h-9 rounded-xl bg-primary/10 border border-primary/20 text-primary hover:bg-primary hover:text-[#071425]" variant="outline">
+                          <ShoppingCart size={13} className="mr-2" /> Agregar
+                        </Button>
+                        <Button
+                          onClick={() => removeFromWishlist(product.id)}
+                          className="h-9 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500 hover:text-white"
+                          variant="outline"
                         >
-                          <Trash2 size={13} /> Eliminar
-                        </button>
+                          <Trash2 size={13} className="mr-2" /> Eliminar
+                        </Button>
                       </div>
                     </div>
                   </motion.div>
@@ -166,19 +165,20 @@ export default function Favorites() {
               className="mt-10 rounded-2xl border border-white/10 bg-[#0d1c31] p-5 flex flex-col sm:flex-row items-center justify-between gap-4"
             >
               <div>
-                <p className="text-white font-semibold">{favorites.length} productos en favoritos</p>
-                <p className="text-white/40 text-sm">Total potencial: ${favorites.reduce((s, p) => s + p.price, 0).toFixed(2)}</p>
+                <p className="text-white font-semibold">{wishlist.length} productos en favoritos</p>
+                <p className="text-white/40 text-sm">Guarda mas productos para compararlos luego.</p>
               </div>
               <div className="flex gap-3">
-                <button className="rounded-xl bg-primary px-6 py-2.5 font-semibold text-[#071425] text-sm hover:brightness-105 transition flex items-center gap-2">
+                <Button className="rounded-xl bg-primary px-6 py-2.5 font-semibold text-[#071425] text-sm hover:brightness-105 transition flex items-center gap-2">
                   <ShoppingCart size={16} /> Agregar Todo al Carrito
-                </button>
-                <button
-                  onClick={() => setFavorites([])}
-                  className="rounded-xl border border-white/15 bg-white/5 px-6 py-2.5 font-semibold text-white/60 text-sm hover:bg-white/10 transition"
+                </Button>
+                <Button
+                  onClick={() => wishlist.forEach((item) => removeFromWishlist(item.id))}
+                  variant="outline"
+                  className="rounded-xl border border-white/15 bg-white/5 px-6 py-2.5 font-semibold text-white/60 text-sm hover:bg-white/10"
                 >
                   Limpiar Lista
-                </button>
+                </Button>
               </div>
             </motion.div>
           </>
