@@ -1,3 +1,11 @@
+/**
+ * GET /api/deals
+ * 
+ * Endpoint para obtener productos en oferta/descuento.
+ * Devuelve productos activos que tienen porcentaje de descuento.
+ * Ordenados por descuento en orden descendente.
+ */
+
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 

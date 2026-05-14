@@ -1,3 +1,11 @@
+/**
+ * button.tsx
+ * 
+ * Componente Button reutilizable.
+ * Botón con múltiples variantes (default, outline, secondary, etc)
+ * y tamaños (sm, default, lg, icon).
+ */
+
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import React from "react"

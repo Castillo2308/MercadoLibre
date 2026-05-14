@@ -26,8 +26,36 @@ body {
   @apply text-white overflow-x-hidden;
 }
 
+html[data-theme='light'],
+html[data-theme='light'] body {
+  background: linear-gradient(180deg, #f7fafc 0%, #edf4fb 56%, #e2ebf7 100%);
+  color: #0f172a;
+}
+
+html[data-theme='light'] .app-shell-overlay {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(239, 245, 252, 0.92) 52%, rgba(225, 235, 246, 0.96) 100%) !important;
+}
+
 /* CSS Custom Properties */
 @layer base {
+  html[data-theme='light'] {
+    --border-border: rgba(15, 23, 42, 0.12);
+    --background: #f5f7fb;
+    --foreground: #0f172a;
+    --card: rgba(255, 255, 255, 0.9);
+    --card-foreground: #0f172a;
+    --primary: #15803d;
+    --primary-foreground: #ffffff;
+    --secondary: #e2e8f0;
+    --secondary-foreground: #0f172a;
+    --accent: #dc2626;
+    --accent-foreground: #ffffff;
+    --muted: rgba(15, 23, 42, 0.08);
+    --muted-foreground: rgba(15, 23, 42, 0.68);
+    --border: rgba(15, 23, 42, 0.12);
+    --input: rgba(15, 23, 42, 0.08);
+  }
+
   :root {
     --border-border: rgba(255, 255, 255, 0.14);
     --background: #071425;
@@ -49,6 +77,241 @@ body {
 
   * {
     border-color: var(--border-border);
+  }
+
+  html[data-theme='light'] .theme-unified .bg-\[\#071425\],
+  html[data-theme='light'] .bg-\[\#071425\] {
+    background-color: #f5f7fb !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-\[\#061321\],
+  html[data-theme='light'] .bg-\[\#061321\],
+  html[data-theme='light'] .theme-unified .bg-\[\#06131f\],
+  html[data-theme='light'] .bg-\[\#06131f\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0a1a2d\],
+  html[data-theme='light'] .bg-\[\#0a1a2d\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0f1c30\],
+  html[data-theme='light'] .bg-\[\#0f1c30\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0f1e34\],
+  html[data-theme='light'] .bg-\[\#0f1e34\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0f2139\],
+  html[data-theme='light'] .bg-\[\#0f2139\] {
+    background-color: rgba(255, 255, 255, 0.94) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-\[\#091424\],
+  html[data-theme='light'] .bg-\[\#091424\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0b1b2f\],
+  html[data-theme='light'] .bg-\[\#0b1b2f\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0c1d31\],
+  html[data-theme='light'] .bg-\[\#0c1d31\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0d1c31\],
+  html[data-theme='light'] .bg-\[\#0d1c31\],
+  html[data-theme='light'] .theme-unified .bg-\[\#102036\],
+  html[data-theme='light'] .bg-\[\#102036\],
+  html[data-theme='light'] .theme-unified .bg-\[\#0b182b\],
+  html[data-theme='light'] .bg-\[\#0b182b\] {
+    background-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-\[\#0c1d31\]\/85,
+  html[data-theme='light'] .bg-\[\#0c1d31\]\/85,
+  html[data-theme='light'] .theme-unified .bg-\[\#0c1d31\]\/90,
+  html[data-theme='light'] .bg-\[\#0c1d31\]\/90,
+  html[data-theme='light'] .theme-unified .bg-\[\#0d1c31\]\/90,
+  html[data-theme='light'] .bg-\[\#0d1c31\]\/90,
+  html[data-theme='light'] .theme-unified .bg-\[\#0d1c31\]\/95,
+  html[data-theme='light'] .bg-\[\#0d1c31\]\/95,
+  html[data-theme='light'] .theme-unified .bg-\[\#0f1e34\]\/70,
+  html[data-theme='light'] .bg-\[\#0f1e34\]\/70,
+  html[data-theme='light'] .theme-unified .bg-\[\#0f2139\]\/95,
+  html[data-theme='light'] .bg-\[\#0f2139\]\/95 {
+    background-color: rgba(255, 255, 255, 0.88) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-\[\#0a1a2d\]\/55,
+  html[data-theme='light'] .bg-\[\#0a1a2d\]\/55,
+  html[data-theme='light'] .theme-unified .bg-\[\#0b182b\]\/80,
+  html[data-theme='light'] .bg-\[\#0b182b\]\/80,
+  html[data-theme='light'] .theme-unified .bg-\[\#0d1c31\]\/80,
+  html[data-theme='light'] .bg-\[\#0d1c31\]\/80 {
+    background-color: rgba(255, 255, 255, 0.84) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-white\/5,
+  html[data-theme='light'] .bg-white\/5,
+  html[data-theme='light'] .theme-unified .bg-white\/10,
+  html[data-theme='light'] .bg-white\/10,
+  html[data-theme='light'] .theme-unified .bg-white\/15,
+  html[data-theme='light'] .bg-white\/15,
+  html[data-theme='light'] .theme-unified .bg-white\/20,
+  html[data-theme='light'] .bg-white\/20 {
+    background-color: rgba(255, 255, 255, 0.82) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .border-white\/10,
+  html[data-theme='light'] .border-white\/10,
+  html[data-theme='light'] .theme-unified .border-white\/15,
+  html[data-theme='light'] .border-white\/15,
+  html[data-theme='light'] .theme-unified .border-white\/20,
+  html[data-theme='light'] .border-white\/20,
+  html[data-theme='light'] .theme-unified .border-white\/30,
+  html[data-theme='light'] .border-white\/30 {
+    border-color: rgba(15, 23, 42, 0.12) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .border-gray-100,
+  html[data-theme='light'] .border-gray-100,
+  html[data-theme='light'] .theme-unified .border-gray-200,
+  html[data-theme='light'] .border-gray-200,
+  html[data-theme='light'] .theme-unified .border-gray-300,
+  html[data-theme='light'] .border-gray-300,
+  html[data-theme='light'] .theme-unified .border-gray-400,
+  html[data-theme='light'] .border-gray-400,
+  html[data-theme='light'] .theme-unified .border-gray-500,
+  html[data-theme='light'] .border-gray-500,
+  html[data-theme='light'] .theme-unified .border-gray-600,
+  html[data-theme='light'] .border-gray-600,
+  html[data-theme='light'] .theme-unified .border-gray-700,
+  html[data-theme='light'] .border-gray-700,
+  html[data-theme='light'] .theme-unified .border-gray-800,
+  html[data-theme='light'] .border-gray-800,
+  html[data-theme='light'] .theme-unified .border-gray-900,
+  html[data-theme='light'] .border-gray-900 {
+    border-color: rgba(15, 23, 42, 0.12) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-white,
+  html[data-theme='light'] .text-white {
+    color: #0f172a !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-black,
+  html[data-theme='light'] .text-black,
+  html[data-theme='light'] .theme-unified .text-gray-950,
+  html[data-theme='light'] .text-gray-950,
+  html[data-theme='light'] .theme-unified .text-slate-950,
+  html[data-theme='light'] .text-slate-950 {
+    color: #0f172a !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-gray-900,
+  html[data-theme='light'] .text-gray-900,
+  html[data-theme='light'] .theme-unified .text-slate-900,
+  html[data-theme='light'] .text-slate-900,
+  html[data-theme='light'] .theme-unified .text-zinc-900,
+  html[data-theme='light'] .text-zinc-900 {
+    color: #111827 !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-gray-800,
+  html[data-theme='light'] .text-gray-800,
+  html[data-theme='light'] .theme-unified .text-slate-800,
+  html[data-theme='light'] .text-slate-800,
+  html[data-theme='light'] .theme-unified .text-zinc-800,
+  html[data-theme='light'] .text-zinc-800 {
+    color: #1f2937 !important;
+  }
+
+  html[data-theme='light'] .theme-unified .bg-slate-900,
+  html[data-theme='light'] .bg-slate-900,
+  html[data-theme='light'] .theme-unified .bg-slate-800,
+  html[data-theme='light'] .bg-slate-800,
+  html[data-theme='light'] .theme-unified .bg-slate-700,
+  html[data-theme='light'] .bg-slate-700,
+  html[data-theme='light'] .theme-unified .bg-zinc-900,
+  html[data-theme='light'] .bg-zinc-900,
+  html[data-theme='light'] .theme-unified .bg-neutral-900,
+  html[data-theme='light'] .bg-neutral-900,
+  html[data-theme='light'] .theme-unified .bg-gray-900,
+  html[data-theme='light'] .bg-gray-900 {
+    background-color: rgba(255, 255, 255, 0.94) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-white\/85,
+  html[data-theme='light'] .text-white\/85,
+  html[data-theme='light'] .theme-unified .text-white\/80,
+  html[data-theme='light'] .text-white\/80,
+  html[data-theme='light'] .theme-unified .text-white\/75,
+  html[data-theme='light'] .text-white\/75,
+  html[data-theme='light'] .theme-unified .text-white\/70,
+  html[data-theme='light'] .text-white\/70,
+  html[data-theme='light'] .theme-unified .text-white\/65,
+  html[data-theme='light'] .text-white\/65,
+  html[data-theme='light'] .theme-unified .text-white\/60,
+  html[data-theme='light'] .text-white\/60,
+  html[data-theme='light'] .theme-unified .text-white\/55,
+  html[data-theme='light'] .text-white\/55,
+  html[data-theme='light'] .theme-unified .text-white\/50,
+  html[data-theme='light'] .text-white\/50,
+  html[data-theme='light'] .theme-unified .text-white\/45,
+  html[data-theme='light'] .text-white\/45,
+  html[data-theme='light'] .theme-unified .text-white\/40,
+  html[data-theme='light'] .text-white\/40,
+  html[data-theme='light'] .theme-unified .text-white\/30,
+  html[data-theme='light'] .text-white\/30,
+  html[data-theme='light'] .theme-unified .text-white\/25,
+  html[data-theme='light'] .text-white\/25,
+  html[data-theme='light'] .theme-unified .text-white\/20,
+  html[data-theme='light'] .text-white\/20 {
+    color: rgba(15, 23, 42, 0.72) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-white\/10,
+  html[data-theme='light'] .text-white\/10,
+  html[data-theme='light'] .theme-unified .text-white\/5,
+  html[data-theme='light'] .text-white\/5 {
+    color: rgba(15, 23, 42, 0.38) !important;
+  }
+
+  html[data-theme='light'] .card,
+  html[data-theme='light'] .card-elevated,
+  html[data-theme='light'] .glass,
+  html[data-theme='light'] .glass-dark {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(15, 23, 42, 0.12) !important;
+    color: #0f172a !important;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08) !important;
+  }
+
+  html[data-theme='light'] .btn-primary,
+  html[data-theme='light'] .btn-secondary,
+  html[data-theme='light'] .btn-outline {
+    color: #0f172a !important;
+  }
+
+  html[data-theme='light'] .btn-outline {
+    border-color: rgba(15, 23, 42, 0.18) !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+  }
+
+  html[data-theme='light'] .input-field,
+  html[data-theme='light'] .input-modern {
+    background: rgba(255, 255, 255, 0.9) !important;
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.14) !important;
+  }
+
+  html[data-theme='light'] .input-field::placeholder,
+  html[data-theme='light'] .input-modern::placeholder {
+    color: rgba(15, 23, 42, 0.45) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .from-primary,
+  html[data-theme='light'] .from-primary {
+    --tw-gradient-from: #15803d var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .from-secondary,
+  html[data-theme='light'] .from-secondary {
+    --tw-gradient-from: #dbe7f6 var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .to-secondary,
+  html[data-theme='light'] .to-secondary {
+    --tw-gradient-to: #eaf1fb var(--tw-gradient-to-position) !important;
   }
 }
 

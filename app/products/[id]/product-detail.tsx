@@ -1,5 +1,19 @@
 'use client';
 
+/**
+ * product-detail.tsx
+ * 
+ * Página de detalle de un producto.
+ * Muestra:
+ * - Imágenes del producto con zoom
+ * - Información del vendedor
+ * - Precio y disponibilidad
+ * - Ratings y reviews
+ * - Botones para agregar a carrito/favoritos
+ * - Contacto con el vendedor
+ * - Descripción detallada
+ */
+
 import { Heart, ShoppingCart, Share2, Star, Shield, MessageCircle } from 'lucide-react';
 import { useState, memo } from 'react';
 import Link from 'next/link';

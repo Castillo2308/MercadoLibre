@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * ProtectedRoute.tsx
+ * 
+ * Componente que protege rutas requiriendo autenticación.
+ * Si el usuario no está autenticado, lo redirige a la página de login
+ * con un parámetro de redirección para volver a la página original.
+ */
+
 import { useAuth } from '@/context/AuthContext';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';

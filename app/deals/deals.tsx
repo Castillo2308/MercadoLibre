@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * deals.tsx
+ * 
+ * Página de ofertas y descuentos.
+ * Muestra:
+ * - Grid de productos con descuento
+ * - Porcentaje de descuento visible
+ * - Precio original y precio con descuento
+ * - Contador de tiempo restante para ofertas
+ * - Botones para agregar al carrito
+ */
+
 import { motion } from 'framer-motion';
 import { Flame, Clock, Zap, ShoppingCart } from 'lucide-react';
 import Link from 'next/link';

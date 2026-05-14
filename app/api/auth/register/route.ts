@@ -1,3 +1,11 @@
+/**
+ * POST /api/auth/register
+ * 
+ * Endpoint para registrar un nuevo usuario.
+ * Valida los datos, hashea la contraseña y crea un usuario en la BD.
+ * Devuelve los datos del usuario creado.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';

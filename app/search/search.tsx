@@ -1,3 +1,16 @@
+/**
+ * search.tsx
+ * 
+ * Página de búsqueda y filtrado de productos.
+ * Características:
+ * - Búsqueda por keywords
+ * - Filtros por categoría, precio, rating
+ * - Ordenamiento de resultados
+ * - Paginación
+ * - Skeleton loading
+ * - Enlace a detalles de cada producto
+ */
+
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";

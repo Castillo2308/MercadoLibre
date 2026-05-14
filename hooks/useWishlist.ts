@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * useWishlist.ts
+ * 
+ * Hook para gestionar la lista de deseos/favoritos.
+ * Sincroniza entre localStorage y servidor para usuarios autenticados.
+ * Permite agregar/remover productos de la lista de deseos.
+ */
+
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 

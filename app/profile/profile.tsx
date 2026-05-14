@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * profile.tsx
+ * 
+ * Página de perfil del usuario.
+ * Muestra:
+ * - Información personal
+ * - Historial de órdenes
+ * - Estadísticas de compras
+ * - Métodos de pago
+ * - Direcciones guardadas
+ * - Configuración de cuenta
+ */
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   BarChart3,
@@ -13,21 +26,26 @@ import {
   Receipt,
   Phone,
   Settings,
+  Moon,
   Star,
   Truck,
   TrendingUp,
+  Sun,
   User,
 } from 'lucide-react';
 import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useRouter } from 'next/navigation';
 
 export default function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
   const { user, logout } = useAuth();
+  const { theme, setTheme } = useTheme();
   const { clearCart } = useShoppingCart();
   const router = useRouter();
+  const isLightTheme = theme === 'light';
 
   const userInfo = useMemo(() => {
     const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Usuario';
@@ -541,6 +559,42 @@ export default function Profile() {
                       <Settings size={24} className="text-secondary" />
                       Configuracion de Cuenta
                     </h3>
+
+                    <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-lg font-bold text-white">Apariencia</p>
+                          <p className="text-sm text-white/65">Cambia entre un modo oscuro y uno claro, ambos con el mismo estilo moderno.</p>
+                        </div>
+
+                        <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-1 shadow-[0_10px_22px_rgba(0,0,0,0.18)]">
+                          <button
+                            type="button"
+                            onClick={() => setTheme('dark')}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                              !isLightTheme
+                                ? 'bg-primary text-[#071425] shadow-[0_8px_18px_rgba(29,184,73,0.28)]'
+                                : 'text-white/65 hover:text-white'
+                            }`}
+                          >
+                            <Moon size={16} />
+                            Oscuro
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setTheme('light')}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                              isLightTheme
+                                ? 'bg-white text-[#071425] shadow-[0_8px_18px_rgba(255,255,255,0.18)]'
+                                : 'text-white/65 hover:text-white'
+                            }`}
+                          >
+                            <Sun size={16} />
+                            Claro
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
                     {[
                       {

@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * Footer.tsx
+ * 
+ * Pie de página de la aplicación.
+ * Incluye:
+ * - Newsletter subscription
+ * - Links de navegación
+ * - Información de contacto
+ * - Redes sociales
+ */
+
 import Link from 'next/link';
 import { useState } from 'react';
 import { Facebook, Twitter, Instagram, Mail, ArrowRight, MapPin, Phone } from 'lucide-react';

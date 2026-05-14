@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * PageTransition.tsx
+ * 
+ * Componente wrapper para animaciones de transición de página.
+ * Proporciona efecto de fade y slide cuando se cambiar de ruta.
+ * Exporta animaciones predefinidas que se pueden reutilizar en otros componentes.
+ */
+
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 

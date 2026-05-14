@@ -1,3 +1,11 @@
+/**
+ * textarea.tsx
+ * 
+ * Componente Textarea reutilizable.
+ * Área de texto multiline para comentarios, descripciones, etc.
+ * Incluye estados para disabled e invalid.
+ */
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

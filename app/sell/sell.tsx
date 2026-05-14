@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * sell.tsx
+ * 
+ * Página para que vendedores publiquen nuevos productos.
+ * Incluye:
+ * - Formulario para ingresar datos del producto
+ * - Campos para título, descripción, precio
+ * - Subida de imágenes
+ * - Selección de categoría
+ * - Vista previa del producto
+ * - Validación de formulario
+ */
+
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import gsap from 'gsap';

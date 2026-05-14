@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * useShoppingCart.ts
+ * 
+ * Hook personalizado para gestionar el carrito de compras.
+ * Sincroniza automáticamente entre localStorage y la API del servidor.
+ * Soporta usuarios autenticados y no autenticados (invitados).
+ * Permite agregar/remover productos, actualizar cantidades y calcular totales.
+ */
+
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '@/context/AuthContext';
 

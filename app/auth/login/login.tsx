@@ -1,5 +1,17 @@
 'use client';
 
+/**
+ * login.tsx
+ * 
+ * Componente para la página de login/registro.
+ * Incluye:
+ * - Formulario de inicio de sesión
+ * - Formulario de registro
+ * - Validación de credenciales
+ * - Manejo de errores
+ * - Redirección después de autenticación
+ */
+
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -8,7 +20,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Login() {
-  const [isLogin, setIsLogin] = useState(true);
+  const [formMode, setFormMode] = useState<'login' | 'register' | 'reset'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -17,15 +29,20 @@ export default function Login() {
   const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
 
+  const isLogin = formMode === 'login';
+  const isRegister = formMode === 'register';
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setLoading(true);
     
     if (!email || !password) {
@@ -46,6 +63,7 @@ export default function Login() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setLoading(true);
 
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
@@ -75,7 +93,7 @@ export default function Login() {
         password,
         confirmPassword,
       });
-      setIsLogin(true);
+      setFormMode('login');
       setEmail('');
       setPassword('');
       setFirstName('');
@@ -89,15 +107,56 @@ export default function Login() {
     }
   };
 
-  const switchForm = () => {
+  const handleResetPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
     setError('');
-    setEmail('');
+    setSuccessMessage('');
+    setLoading(true);
+
+    if (!email || !password || !confirmPassword) {
+      setError('Por favor completa todos los campos');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, confirmPassword }),
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Error al actualizar la contrasena');
+      }
+
+      setSuccessMessage(payload?.message || 'Contrasena actualizada correctamente');
+      setPassword('');
+      setConfirmPassword('');
+      setShowPassword(false);
+      setFormMode('login');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar la contrasena');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const switchMode = (nextMode: 'login' | 'register' | 'reset') => {
+    setError('');
+    setSuccessMessage('');
+    if (nextMode !== 'reset') {
+      setEmail('');
+    }
     setPassword('');
     setFirstName('');
     setLastName('');
     setPhone('');
     setConfirmPassword('');
-    setIsLogin(!isLogin);
+    setShowPassword(false);
+    setFormMode(nextMode);
   };
 
   return (
@@ -122,7 +181,7 @@ export default function Login() {
 
         <div className="mb-6 flex gap-3 rounded-xl border border-white/15 bg-white/5 p-1.5 animate-fadeInUp">
           <button
-            onClick={switchForm}
+            onClick={() => switchMode('login')}
             className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
               isLogin
                 ? 'scale-105 bg-gradient-to-r from-primary to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
@@ -132,9 +191,9 @@ export default function Login() {
             Inicia Sesion
           </button>
           <button
-            onClick={switchForm}
+            onClick={() => switchMode('register')}
             className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
-              !isLogin
+              isRegister
                 ? 'scale-105 bg-gradient-to-r from-primary to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
                 : 'text-white/70 hover:text-white'
             }`}
@@ -146,6 +205,12 @@ export default function Login() {
         {error && (
           <div className="mb-5 rounded-lg border border-red-400/35 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-200 animate-fadeInDown">
             {error}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-5 rounded-lg border border-emerald-400/35 bg-emerald-500/15 px-4 py-3 text-sm font-semibold text-emerald-100 animate-fadeInDown">
+            {successMessage}
           </div>
         )}
 
@@ -187,6 +252,16 @@ export default function Login() {
                 </div>
               </div>
 
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => switchMode('reset')}
+                  className="text-sm font-semibold text-primary transition-colors hover:text-secondary"
+                >
+                  Olvidaste tu contrasena?
+                </button>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
@@ -195,15 +270,8 @@ export default function Login() {
                 {loading ? 'Iniciando sesion...' : 'Inicia Sesion'}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
-
-              <button
-                type="button"
-                className="w-full rounded-xl border border-white/20 bg-white/5 py-3 font-semibold text-white/80 transition-all duration-300 hover:border-primary/50 hover:bg-primary/10 hover:text-white"
-              >
-                Olvidaste tu contrasena?
-              </button>
             </form>
-          ) : (
+          ) : isRegister ? (
             <form onSubmit={handleRegister} className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
@@ -316,6 +384,74 @@ export default function Login() {
                 </Link>
               </p>
             </form>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-6">
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
+                <div className="group relative">
+                  <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Nueva Contrasena</label>
+                <div className="group relative">
+                  <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Minimo 6 caracteres"
+                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/45 transition-colors duration-300 hover:text-primary"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Confirmar Contrasena</label>
+                <div className="group relative">
+                  <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Repite tu nueva contrasena"
+                    className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
+              >
+                {loading ? 'Actualizando contrasena...' : 'Cambiar Contrasena'}
+                <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="w-full rounded-xl border border-white/15 bg-white/5 py-3 font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                Volver al inicio de sesion
+              </button>
+            </form>
           )}
 
           <div className="relative my-8">
@@ -338,7 +474,10 @@ export default function Login() {
         <div className="mt-7 text-center text-sm text-white/70 animate-fadeInUp">
           <p>
             {isLogin ? 'No tienes cuenta? ' : 'Ya tienes cuenta? '}
-            <button onClick={switchForm} className="font-bold text-primary hover:text-secondary transition-colors">
+            <button
+              onClick={() => switchMode(isLogin ? 'register' : 'login')}
+              className="font-bold text-primary hover:text-secondary transition-colors"
+            >
               {isLogin ? 'Registrate aqui' : 'Inicia sesion aqui'}
             </button>
           </p>

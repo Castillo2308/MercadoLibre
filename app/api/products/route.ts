@@ -1,3 +1,11 @@
+/**
+ * GET /api/products
+ * 
+ * Endpoint para obtener productos con filtros opcionales.
+ * Soporta búsqueda por categoría (category), nombre (q) y paginación (take).
+ * Solo devuelve productos activos.
+ */
+
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 

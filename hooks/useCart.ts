@@ -1,3 +1,11 @@
+/**
+ * useCart.ts
+ * 
+ * Hook simplificado para manejar un carrito local en memoria.
+ * Proporciona funciones básicas: agregar, remover, actualizar cantidad
+ * y calcular totales del carrito.
+ */
+
 import { useCallback, useState } from 'react';
 
 export function useCart() {

@@ -1,3 +1,11 @@
+/**
+ * card.tsx
+ * 
+ * Componente Card reutilizable.
+ * Componente base para mostrar contenido en una tarjeta.
+ * Soporta múltiples tamaños y se integra con otros componentes de UI.
+ */
+
 import * as React from "react"
 
 import { cn } from "@/lib/utils"

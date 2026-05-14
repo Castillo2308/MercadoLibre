@@ -1,5 +1,12 @@
 'use client';
 
+/**
+ * RouteScrollToTop.tsx
+ * 
+ * Componente que automáticamente hace scroll hacia el top cuando cambia la ruta.
+ * Desactiva la restauración automática de posición del navegador para un control más preciso.
+ */
+
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 

@@ -1,3 +1,11 @@
+/**
+ * POST /api/auth/login
+ * 
+ * Endpoint para autenticar un usuario.
+ * Valida credenciales contra la base de datos y devuelve los datos del usuario.
+ * El usuario se encarga de guardar estos datos en localStorage desde el frontend.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';

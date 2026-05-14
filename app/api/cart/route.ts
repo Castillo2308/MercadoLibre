@@ -1,3 +1,13 @@
+/**
+ * GET /api/cart
+ * POST /api/cart
+ * 
+ * Endpoints para gestionar el carrito de compras del usuario.
+ * GET: Obtiene los items del carrito del usuario autenticado
+ * POST: Agrega un producto al carrito
+ * Requiere X-User-ID en los headers para identificar al usuario.
+ */
+
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 

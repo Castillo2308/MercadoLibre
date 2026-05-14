@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * cart.tsx
+ * 
+ * Página de carrito de compras.
+ * Muestra:
+ * - Lista de items en el carrito
+ * - Botones para ajustar cantidades
+ * - Resumen de precios y totales
+ * - Opciones de envío y pago
+ * - Botón para proceder al checkout
+ * Solo visible para usuarios autenticados (ProtectedRoute)
+ */
+
 import { Trash2, Plus, Minus, ShoppingCart, ArrowRight, Zap, Wallet, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/ProtectedRoute';

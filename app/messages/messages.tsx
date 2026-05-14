@@ -1,5 +1,19 @@
 'use client';
 
+/**
+ * messages.tsx
+ * 
+ * Página de mensajería/chat.
+ * Permite que los usuarios se comuniquen con:
+ * - Otros usuarios compradores
+ * - Vendedores de productos
+ * Incluye:
+ * - Lista de conversaciones
+ * - Vista de mensajes en tiempo real
+ * - Búsqueda de conversaciones
+ * - Notificaciones de mensajes nuevos
+ */
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Send, UserPlus, Sparkles, MessageSquare, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';

@@ -1,3 +1,11 @@
+/**
+ * useFavorites.ts
+ * 
+ * Hook para gestionar favoritos/wishlist del usuario.
+ * Permite agregar, remover y alternar favoritos en el estado local.
+ * Los favoritos se pueden sincronizar con el servidor si es necesario.
+ */
+
 import { useCallback, useState } from 'react';
 
 export function useFavorites() {

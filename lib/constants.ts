@@ -1,3 +1,10 @@
+/**
+ * constants.ts
+ * 
+ * Constantes globales de la aplicación.
+ * Incluye configuración de URLs de API, endpoints y otras constantes reutilizables.
+ */
+
 // API endpoints configuration
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 

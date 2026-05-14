@@ -1,3 +1,11 @@
+/**
+ * types/index.ts
+ * 
+ * Definiciones de tipos TypeScript para toda la aplicación.
+ * Incluye tipos para usuarios, productos, órdenes, comentarios, etc.
+ * Facilita el type checking y autocompletado en el IDE.
+ */
+
 // User Types
 export interface User {
   id: string;

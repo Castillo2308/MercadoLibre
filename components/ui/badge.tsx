@@ -1,3 +1,11 @@
+/**
+ * badge.tsx
+ * 
+ * Componente Badge reutilizable.
+ * Etiquetas pequeñas para mostrar estados, categorías o información.
+ * Soporta múltiples variantes (default, secondary, destructive, outline, etc).
+ */
+
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
 import { cva, type VariantProps } from "class-variance-authority"

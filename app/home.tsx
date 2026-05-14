@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * home.tsx
+ * 
+ * Página de inicio/home del marketplace Kivra.
+ * Muestra:
+ * - Hero section con CTA principal
+ * - Características principales del sitio
+ * - Productos destacados
+ * - Sección de ofertas
+ * - Galería de categorías
+ * - Llamadas a la acción
+ */
+
 import { motion } from 'framer-motion';
 import {
   ArrowRight,

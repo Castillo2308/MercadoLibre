@@ -1,3 +1,10 @@
+/**
+ * GET /api/categories
+ * 
+ * Endpoint para obtener todas las categorías de productos.
+ * Devuelve solo categorías activas con el conteo de productos en cada una.
+ */
+
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 

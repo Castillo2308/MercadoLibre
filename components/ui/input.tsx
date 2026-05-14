@@ -1,3 +1,11 @@
+/**
+ * input.tsx
+ * 
+ * Componente Input reutilizable.
+ * Campo de entrada de texto con múltiples tipos (text, email, password, etc).
+ * Incluye estados para disabled e invalid.
+ */
+
 import * as React from "react"
 import { Input as InputPrimitive } from "@base-ui/react/input"
 

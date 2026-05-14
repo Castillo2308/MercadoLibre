@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * OptimizedLink.tsx
+ * 
+ * Componente Link optimizado que envuelve Next.js Link.
+ * Proporciona manejo mejorado de prefetch y eventos.
+ * Se utiliza en toda la aplicación en lugar de Link directo.
+ */
+
 import Link, { LinkProps } from 'next/link';
 import { ReactNode, memo } from 'react';
 import { useRouter } from 'next/navigation';

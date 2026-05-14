@@ -1,6 +1,9 @@
 /**
- * Ejemplos de uso de Prisma ORM
- * Para MercadoLibre Clone
+ * db-queries.ts
+ * 
+ * Funciones reutilizables para consultas a la base de datos usando Prisma.
+ * Incluye operaciones CRUD para usuarios, productos, categorías, carrito, favoritos, etc.
+ * Se utiliza desde las rutas API para acceder a los datos de manera segura.
  */
 
 import prisma from "@/lib/prisma";

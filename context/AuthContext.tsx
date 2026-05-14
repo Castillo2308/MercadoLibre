@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * AuthContext.tsx
+ * 
+ * Contexto global para gestionar la autenticación de usuarios.
+ * Proporciona estado y funciones para login, registro y logout.
+ * Los datos del usuario se persisten en localStorage.
+ */
+
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 interface AuthUser {

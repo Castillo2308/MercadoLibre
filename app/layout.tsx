@@ -1,8 +1,17 @@
+/**
+ * layout.tsx
+ * 
+ * Layout raíz de la aplicación Kivra.
+ * Define estructura HTML global, carga fuentes personalizadas,
+ * configura el provider de autenticación y componentes dinámicos.
+ */
+
 import type { Metadata } from 'next';
 import { Poppins, Outfit } from 'next/font/google';
 import './globals.css';
 import dynamic from 'next/dynamic';
 import { AuthProvider } from '@/context/AuthContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import { cn } from "@/lib/utils";
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false, loading: () => null });
@@ -36,15 +45,17 @@ export default function RootLayout({
   return (
     <html lang="es" className={cn(poppins.variable, outfit.variable, "font-sans")} suppressHydrationWarning>
       <body className="theme-unified font-poppins overflow-x-hidden bg-[#071425]">
-        <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(255,230,0,0.08),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#071425_0%,#0a1a2d_50%,#0f2139_100%)]" />
-        <AuthProvider>
-          <Navbar />
-          <RouteScrollToTop />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <ConditionalFooter />
-        </AuthProvider>
+        <div className="app-shell-overlay fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(255,230,0,0.08),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#071425_0%,#0a1a2d_50%,#0f2139_100%)]" />
+        <ThemeProvider>
+          <AuthProvider>
+            <Navbar />
+            <RouteScrollToTop />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <ConditionalFooter />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

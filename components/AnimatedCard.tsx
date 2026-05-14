@@ -1,5 +1,14 @@
 'use client';
 
+/**
+ * AnimatedCard.tsx
+ * 
+ * Componente reutilizable para tarjetas con animaciones.
+ * Soporta múltiples variantes de estilo (default, elevated, glass, highlight)
+ * y animaciones de entrada/salida con framer-motion.
+ * Se usa para mostrar productos, categorías y otros contenidos.
+ */
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';

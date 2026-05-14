@@ -1,3 +1,12 @@
+/**
+ * design-api.ts
+ * 
+ * Funciones para generar ilustraciones y avatares dinámicos.
+ * Usa APIs externas (DiceBear, UI Avatars) para crear imágenes
+ * con tema consistente con los colores de la aplicación.
+ * Se utiliza para placeholder de imágenes de productos y avatares de usuarios.
+ */
+
 const SITE_BG = '071425';
 const SITE_PRIMARY = '1db849';
 const SITE_SECONDARY = '2563eb';

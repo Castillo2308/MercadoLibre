@@ -1,5 +1,18 @@
 'use client';
 
+/**
+ * Navbar.tsx
+ * 
+ * Componente principal de navegación de la aplicación.
+ * Incluye:
+ * - Logo y links principales
+ * - Mega menú de productos por categoría
+ * - Barra de búsqueda
+ * - Carrito de compras
+ * - Opciones de usuario (perfil, logout)
+ * - Menú responsive para dispositivos móviles
+ */
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronDown,
@@ -16,7 +29,7 @@ import {
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { memo, useCallback, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useWishlist } from '@/hooks/useWishlist';
@@ -60,13 +73,21 @@ const productMegaMenu = [
 
 function NavbarComponent() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProductsOpen, setIsProductsOpen] = useState(false);
   const { isAuthenticated, user, logout } = useAuth();
   const { getTotalItems, clearCart } = useShoppingCart();
   const { wishlist } = useWishlist();
   const router = useRouter();
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const cartCount = getTotalItems();
+
+  useEffect(() => {
+    if (isSearchOpen) {
+      searchInputRef.current?.focus();
+    }
+  }, [isSearchOpen]);
 
   const handleLogout = useCallback(() => {
     logout();
@@ -79,6 +100,7 @@ function NavbarComponent() {
     if (!query) return;
     router.push(`/search?q=${encodeURIComponent(query)}`);
     setSearchQuery('');
+    setIsSearchOpen(false);
   }, [searchQuery, router]);
 
   const handleSearchKeyDown = useCallback(
@@ -102,16 +124,14 @@ function NavbarComponent() {
           <div className="h-24 flex items-center justify-between gap-4">
             <div className="flex items-center gap-8">
               <Link href="/" className="group relative inline-flex items-center gap-4">
-                <div className="relative h-28 w-28 overflow-hidden rounded-3xl shadow-[0_12px_28px_rgba(0,0,0,0.32)]">
-                  <Image
-                    src={Logo}
-                    alt="Kivra"
-                    fill
-                    sizes="112px"
-                    className="relative object-cover transition-transform duration-300 group-hover:scale-[1.06]"
-                    priority
-                  />
-                </div>
+                <Image
+                  src={Logo}
+                  alt="Kivra"
+                  height={128}
+                  width={128}
+                  className="h-32 w-32 relative object-cover transition-transform duration-300 group-hover:scale-[1.06]"
+                  priority
+                />
                 <div className="relative leading-tight">
                   <p className="text-[2.35rem] font-extrabold tracking-[-0.05em] text-white transition-colors duration-300 group-hover:text-primary sm:text-[2.55rem]">
                     Kivra
@@ -224,24 +244,57 @@ function NavbarComponent() {
             </div>
 
             <div className="hidden md:flex items-center gap-3 flex-1 max-w-md mx-4">
-              <div className="relative w-full">
-                <input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={handleSearchKeyDown}
-                  placeholder="Buscar productos, marcas y mas..."
-                  className="w-full rounded-full border border-white/15 bg-white/10 px-4 py-3 pl-10 text-sm text-white placeholder:text-white/55 focus:outline-none focus:ring-2 focus:ring-primary"
-                />
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60" />
-              </div>
-              <button
-                type="button"
-                onClick={submitSearch}
-                className="rounded-full bg-primary p-3 text-[#071425] hover:brightness-105 transition"
-                aria-label="Buscar"
+              <motion.div
+                animate={{ width: isSearchOpen ? 336 : 52 }}
+                transition={{ type: 'spring', stiffness: 320, damping: 30 }}
+                className="relative h-12 overflow-hidden rounded-full border border-white/15 bg-white/10 shadow-[0_10px_28px_rgba(0,0,0,0.18)]"
               >
-                <Search size={16} />
-              </button>
+                {!isSearchOpen ? (
+                  <button
+                    type="button"
+                    onClick={() => setIsSearchOpen(true)}
+                    className="flex h-full w-full items-center justify-center text-white/85 hover:text-white transition"
+                    aria-label="Abrir buscador"
+                  >
+                    <Search size={17} />
+                    <span className="sr-only">Abrir buscador</span>
+                  </button>
+                ) : (
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      submitSearch();
+                    }}
+                    className="flex h-full items-center gap-2 px-3"
+                  >
+                    <Search size={16} className="shrink-0 text-white/60" />
+                    <input
+                      ref={searchInputRef}
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Buscar productos"
+                      className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-xs font-semibold text-[#071425] transition hover:brightness-110"
+                    >
+                      Buscar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsSearchOpen(false);
+                        setSearchQuery('');
+                      }}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
+                      aria-label="Cerrar buscador"
+                    >
+                      <X size={14} />
+                    </button>
+                  </form>
+                )}
+              </motion.div>
             </div>
 
             <div className="hidden md:flex items-center gap-2 text-white">

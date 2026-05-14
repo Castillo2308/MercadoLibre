@@ -1,3 +1,15 @@
+/**
+ * GET /api/favorites
+ * POST /api/favorites
+ * DELETE /api/favorites
+ * 
+ * Endpoints para gestionar favoritos del usuario.
+ * GET: Obtiene todos los favoritos del usuario
+ * POST: Agrega un producto a favoritos
+ * DELETE: Remueve un producto de favoritos
+ * Requiere X-User-ID en los headers.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import {

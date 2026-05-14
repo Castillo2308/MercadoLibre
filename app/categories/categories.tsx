@@ -1,3 +1,15 @@
+/**
+ * categories.tsx
+ * 
+ * Página de categorías de productos.
+ * Muestra:
+ * - Grid de todas las categorías disponibles
+ * - Conteo de productos en cada categoría
+ * - Enlaces para explorar productos de cada categoría
+ * - Animaciones y hover effects
+ * - Skeleton loading mientras carga
+ */
+
 "use client";
 
 import { motion } from "framer-motion";

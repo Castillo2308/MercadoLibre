@@ -1,3 +1,11 @@
+/**
+ * GET /api/users/orders
+ * 
+ * Endpoint para obtener el historial de órdenes del usuario.
+ * Devuelve todas las órdenes del usuario autenticado.
+ * Requiere X-User-ID en los headers.
+ */
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getUserOrders } from '@/lib/db-queries';
 import prisma from '@/lib/prisma';

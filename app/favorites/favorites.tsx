@@ -1,5 +1,16 @@
 'use client';
 
+/**
+ * favorites.tsx
+ * 
+ * Página de productos favoritos/wishlist.
+ * Muestra:
+ * - Lista de productos guardados como favoritos
+ * - Botones para remover de favoritos
+ * - Botones para agregar al carrito
+ * - Mensajes cuando no hay favoritos
+ */
+
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, ShoppingCart, ArrowRight, Trash2 } from 'lucide-react';
 import Link from 'next/link';
