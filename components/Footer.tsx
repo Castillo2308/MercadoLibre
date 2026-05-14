@@ -1,9 +1,34 @@
 'use client';
 
 import Link from 'next/link';
+import { useState } from 'react';
 import { Facebook, Twitter, Instagram, Mail, ArrowRight, MapPin, Phone } from 'lucide-react';
 
 export default function Footer() {
+  const [email, setEmail] = useState('');
+
+  const handleSubscribe = async () => {
+    if (!email || !email.includes('@')) {
+      alert('Por favor ingresa un correo válido');
+      return;
+    }
+    try {
+      const res = await fetch('/api/newsletter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (res.ok) {
+        alert('¡Gracias! Te hemos suscrito.');
+        setEmail('');
+      } else {
+        alert('Hubo un error al suscribirte');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error en la suscripción');
+    }
+  };
   return (
     <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-0 relative overflow-hidden">
       {/* Animated background */}
@@ -22,11 +47,16 @@ export default function Footer() {
             </div>
             <div className="w-full md:w-auto flex gap-2">
               <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 type="email"
                 placeholder="tu@email.com"
                 className="px-4 py-3 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-white flex-1 md:flex-none"
               />
-              <button className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 hover:scale-105 flex items-center gap-2">
+              <button
+                onClick={handleSubscribe}
+                className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 hover:scale-105 flex items-center gap-2"
+              >
                 <Mail size={18} />
                 Suscribir
               </button>
@@ -99,15 +129,15 @@ export default function Footer() {
             <div className="space-y-3 text-gray-300">
               <div className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Phone size={16} />
-                <span>+34 900 123 456</span>
+                <span>+506 6000 1234</span>
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Mail size={16} />
-                <span>soporte@ml.com</span>
+                <span>soporte@kivra.cr</span>
               </div>
               <div className="flex items-center gap-2 hover:text-primary transition-colors">
                 <MapPin size={16} />
-                <span>Madrid, España</span>
+                <span>San José, Costa Rica</span>
               </div>
             </div>
           </div>

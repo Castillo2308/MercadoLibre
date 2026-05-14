@@ -102,13 +102,12 @@ function NavbarComponent() {
           <div className="h-24 flex items-center justify-between gap-4">
             <div className="flex items-center gap-8">
               <Link href="/" className="group relative inline-flex items-center gap-4">
-                <div className="pointer-events-none absolute -inset-3 rounded-2xl bg-primary/10 opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="relative h-20 w-20 overflow-hidden rounded-3xl border border-white/15 bg-white/5 shadow-[0_12px_28px_rgba(0,0,0,0.32)] sm:h-22 sm:w-22">
+                <div className="relative h-28 w-28 overflow-hidden rounded-3xl shadow-[0_12px_28px_rgba(0,0,0,0.32)]">
                   <Image
                     src={Logo}
                     alt="Kivra"
                     fill
-                    sizes="80px"
+                    sizes="112px"
                     className="relative object-cover transition-transform duration-300 group-hover:scale-[1.06]"
                     priority
                   />

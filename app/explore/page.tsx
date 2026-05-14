@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Star, ShoppingCart } from "lucide-react";
+import { Star, ShoppingCart, Heart } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { SmartImage } from "@/components/ui/smart-image";
@@ -27,6 +28,7 @@ export default function ExplorePage() {
   const { addToCart } = useShoppingCart();
   const { isAuthenticated } = useAuth();
   const router = useRouter();
+  const { wishlist, toggleWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -98,6 +100,21 @@ export default function ExplorePage() {
                 >
                   <div className="group overflow-hidden rounded-2xl border border-white/10 bg-[#0d1c31] hover:border-white/20 transition-all duration-300 h-full flex flex-col">
                     <Link href={`/products/${product.id}`} className="block">
+                                            <div className="relative bg-gradient-to-br from-[#102036] to-[#0d1c31] h-48 flex items-center justify-center overflow-hidden">
+                                              <button
+                                                onClick={(e) => {
+                                                  e.preventDefault();
+                                                  e.stopPropagation();
+                                                  if (!isAuthenticated) {
+                                                    router.push(`/auth/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
+                                                    return;
+                                                  }
+                                                  toggleWishlist(String(product.id), product.title || product.name || '');
+                                                }}
+                                                className="absolute top-3 right-3 h-9 w-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center hover:bg-white/20 transition-all duration-200"
+                                              >
+                                                <Heart size={16} className={`transition-colors ${isInWishlist(String(product.id)) ? 'fill-red-400 text-red-400' : 'text-white/70'}`} />
+                                              </button>
                       <div className="relative bg-gradient-to-br from-[#102036] to-[#0d1c31] h-48 flex items-center justify-center overflow-hidden">
                         {product.images && product.images[0] ? (
                           <SmartImage

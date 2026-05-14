@@ -18,7 +18,7 @@ import {
   TrendingUp,
   User,
 } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useRouter } from 'next/navigation';
@@ -35,7 +35,7 @@ export default function Profile() {
       name: fullName || 'Usuario',
       email: user?.email || 'sin-correo@kivra.com',
       phone: user?.phone || 'Sin telefono',
-      location: 'Madrid, Espana',
+      location: 'San José, Costa Rica',
       joinDate: '15 de enero de 2023',
       rating: 4.8,
       reviews: 156,
@@ -87,14 +87,41 @@ export default function Profile() {
     { label: 'En transito', value: '6', icon: Truck, extra: 'ETA 2.3 dias' },
   ];
 
-  const monthlyPurchases = [
-    { month: 'Ene', value: 220 },
-    { month: 'Feb', value: 330 },
-    { month: 'Mar', value: 410 },
-    { month: 'Abr', value: 360 },
-    { month: 'May', value: 520 },
-    { month: 'Jun', value: 480 },
-  ];
+  const [monthlyPurchases, setMonthlyPurchases] = useState(() => [
+    { month: 'Ene', value: 0 },
+    { month: 'Feb', value: 0 },
+    { month: 'Mar', value: 0 },
+    { month: 'Abr', value: 0 },
+    { month: 'May', value: 0 },
+    { month: 'Jun', value: 0 },
+  ]);
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user?.id) return;
+      try {
+        const res = await fetch('/api/users/orders', { headers: { 'X-User-ID': user.id }, cache: 'no-store' });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const orders = payload.data || [];
+
+        // Simple aggregation by month (last 6 months placeholder)
+        const months = ['Ene','Feb','Mar','Abr','May','Jun'];
+        const counts = months.map((m) => ({ month: m, value: 0 }));
+
+        for (const o of orders) {
+          const d = new Date(o.createdAt || o.createdAt);
+          const mIndex = d.getMonth();
+          if (mIndex >= 0 && mIndex < counts.length) counts[mIndex].value += 1;
+        }
+
+        setMonthlyPurchases(counts);
+      } catch (e) {
+        console.error('Failed to fetch user orders for profile', e);
+      }
+    };
+    void fetchOrders();
+  }, [user?.id]);
 
   const purchaseCategories = [
     { name: 'Tecnologia', value: 46 },
