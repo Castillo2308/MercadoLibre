@@ -11,6 +11,7 @@
 import Link, { LinkProps } from 'next/link';
 import { ReactNode, memo } from 'react';
 import { useRouter } from 'next/navigation';
+import { useNavigationLoader } from './NavigationLoaderProvider';
 
 interface OptimizedLinkProps extends LinkProps {
   children: ReactNode;
@@ -27,8 +28,10 @@ function OptimizedLinkComponent({
   ...props
 }: OptimizedLinkProps) {
   const router = useRouter();
+  const { startLoading } = useNavigationLoader();
 
   const handleClick = () => {
+    startLoading();
     if (onClick) onClick();
     // Scroll to top immediately
     window.scrollTo({ top: 0, behavior: 'instant' });

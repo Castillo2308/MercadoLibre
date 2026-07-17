@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useShoppingCart } from "@/hooks/useShoppingCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useAuth } from "@/context/AuthContext";
+import { useNavigationLoader } from "@/components/NavigationLoaderProvider";
 import { useRouter } from "next/navigation";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
@@ -40,8 +41,9 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const { addToCart } = useShoppingCart();
   const { isAuthenticated } = useAuth();
+  const { startLoading } = useNavigationLoader();
   const router = useRouter();
-  const { wishlist, toggleWishlist, isInWishlist } = useWishlist();
+  const { toggleWishlist, isInWishlist } = useWishlist();
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -60,6 +62,7 @@ export default function ExplorePage() {
 
   const handleAddToCart = (productId: string, productTitle: string, productPrice: number) => {
     if (!isAuthenticated) {
+      startLoading();
       router.push(`/auth/login?redirect=${encodeURIComponent('/explore')}`);
       return;
     }
@@ -119,10 +122,11 @@ export default function ExplorePage() {
                             e.preventDefault();
                             e.stopPropagation();
                             if (!isAuthenticated) {
+                              startLoading();
                               router.push(`/auth/login?redirect=${encodeURIComponent(`/products/${product.id}`)}`);
                               return;
                             }
-                            toggleWishlist(String(product.id), product.title || product.name || '');
+                            toggleWishlist(String(product.id), product.title || '');
                           }}
                           className="absolute top-3 right-3 z-10 h-9 w-9 rounded-full bg-white/10 border border-white/15 flex items-center justify-center hover:bg-white/20 transition-all duration-200"
                         >

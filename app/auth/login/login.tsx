@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function Login() {
@@ -32,6 +33,7 @@ export default function Login() {
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
+  const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
@@ -53,6 +55,7 @@ export default function Login() {
 
     try {
       await login(email, password);
+      startLoading();
       router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesion');
@@ -100,6 +103,7 @@ export default function Login() {
       setLastName('');
       setPhone('');
       setConfirmPassword('');
+      startLoading();
       router.push('/auth/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse');

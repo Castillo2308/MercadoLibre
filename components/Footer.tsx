@@ -14,9 +14,12 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { Facebook, Twitter, Instagram, Mail, ArrowRight, MapPin, Phone } from 'lucide-react';
+import { useTheme } from '@/context/ThemeContext';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
+  const { theme } = useTheme();
+  const isLightTheme = theme === 'light';
 
   const handleSubscribe = async () => {
     if (!email || !email.includes('@')) {
@@ -41,7 +44,9 @@ export default function Footer() {
     }
   };
   return (
-    <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-0 relative overflow-hidden">
+    <footer
+      className={isLightTheme ? 'relative mt-0 overflow-hidden bg-gradient-to-br from-slate-50 via-white to-slate-100 text-slate-900' : 'relative mt-0 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white'}
+    >
       {/* Animated background */}
       <div className="absolute inset-0 opacity-20">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl animate-float"></div>
@@ -50,11 +55,11 @@ export default function Footer() {
 
       <div className="container mx-auto px-4 py-16 relative z-10">
         {/* Newsletter Section */}
-        <div className="bg-gradient-to-r from-primary to-primary-dark rounded-2xl p-8 mb-16 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105">
+        <div className={`rounded-2xl p-8 mb-16 shadow-xl transition-all duration-300 transform hover:scale-105 ${isLightTheme ? 'bg-white border border-slate-200 hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)]' : 'bg-gradient-to-r from-primary to-primary-dark hover:shadow-2xl'}`}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
-              <h3 className="text-2xl font-bold mb-2 text-white">¡Recibe Ofertas Especiales!</h3>
-              <p className="text-white/90">Suscríbete a nuestro newsletter para recibir las mejores ofertas</p>
+              <h3 className={`text-2xl font-bold mb-2 ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>¡Recibe Ofertas Especiales!</h3>
+              <p className={isLightTheme ? 'text-slate-600' : 'text-white/90'}>Suscríbete a nuestro newsletter para recibir las mejores ofertas</p>
             </div>
             <div className="w-full md:w-auto flex gap-2">
               <input
@@ -176,7 +181,7 @@ export default function Footer() {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-700 my-8"></div>
+        <div className={isLightTheme ? 'my-8 border-t border-slate-200' : 'my-8 border-t border-gray-700'}></div>
 
         {/* Bottom Footer */}
         <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm gap-4">

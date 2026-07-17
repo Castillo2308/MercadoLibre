@@ -20,6 +20,7 @@ import Link from 'next/link';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useRouter } from 'next/navigation';
 
 function ProductDetailComponent({ params }: { params: { id: string } }) {
@@ -29,6 +30,7 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
   const { isInWishlist, toggleWishlist } = useWishlist();
   const { addToCart } = useShoppingCart();
   const { isAuthenticated } = useAuth();
+  const { startLoading } = useNavigationLoader();
   const router = useRouter();
 
   const productId = params.id;
@@ -51,6 +53,7 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
+      startLoading();
       router.push(`/auth/login?redirect=${encodeURIComponent(`/products/${params.id}`)}`);
       return;
     }
@@ -61,10 +64,12 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
 
   const handleBuyNow = () => {
     if (!isAuthenticated) {
+      startLoading();
       router.push('/auth/login?redirect=true');
       return;
     }
     handleAddToCart();
+    startLoading();
     router.push('/cart');
   };
 

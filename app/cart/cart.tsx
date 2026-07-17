@@ -2,7 +2,7 @@
 
 /**
  * cart.tsx
- * 
+ *
  * Página de carrito de compras.
  * Muestra:
  * - Lista de items en el carrito
@@ -13,23 +13,38 @@
  * Solo visible para usuarios autenticados (ProtectedRoute)
  */
 
-import { Trash2, Plus, Minus, ShoppingCart, ArrowRight, Zap, Wallet, CreditCard } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ArrowRight,
+  CreditCard,
+  Minus,
+  Plus,
+  ShieldCheck,
+  ShoppingCart,
+  Sparkles,
+  Trash2,
+  Truck,
+  Wallet,
+  Zap,
+} from 'lucide-react';
 import Link from 'next/link';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
-import { useShoppingCart } from '@/hooks/useShoppingCart';
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { getDesignIllustration } from '@/lib/design-api';
-import { SmartImage } from '@/components/ui/smart-image';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
+import { SmartImage } from '@/components/ui/smart-image';
+import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { getDesignIllustration } from '@/lib/design-api';
 
 function CartContent() {
   const { cart, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useShoppingCart();
   const { user } = useAuth();
+  const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<'sinpe' | 'cash'>('sinpe');
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
@@ -52,17 +67,15 @@ function CartContent() {
     }, {});
 
     const sellerIds = Object.keys(groupedBySeller);
-    if (sellerIds.length === 0) {
-      return;
-    }
+    if (sellerIds.length === 0) return;
 
     setIsProcessingCheckout(true);
+    startLoading();
+
     try {
       for (const sellerId of sellerIds) {
         const sellerItems = groupedBySeller[sellerId];
-        const lines = sellerItems
-          .map((item) => `- ${item.name} x${item.quantity}`)
-          .join('\n');
+        const lines = sellerItems.map((item) => `- ${item.name} x${item.quantity}`).join('\n');
 
         const message = [
           'Hola, quiero proceder con la compra de estos productos:',
@@ -92,241 +105,326 @@ function CartContent() {
   };
 
   return (
-    <main className="min-h-screen bg-[#071425]">
+    <main className="min-h-screen bg-[#071425] pb-16">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_12%_18%,rgba(29,184,73,0.12),transparent_34%),radial-gradient(circle_at_85%_24%,rgba(255,214,0,0.12),transparent_38%),radial-gradient(circle_at_40%_90%,rgba(37,99,235,0.14),transparent_42%)]" />
-      {/* Header */}
-      <div className="relative overflow-hidden border-b border-white/10 bg-[#091424] py-8">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,184,73,0.18),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,214,0,0.18),transparent_45%)]" />
+
+      <div className="relative overflow-hidden border-b border-white/10 bg-[#091424] py-10">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,184,73,0.2),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,214,0,0.18),transparent_45%)]" />
         <div className="container mx-auto px-4">
-          <div className="relative z-10 flex items-center gap-3 mb-2">
-            <ShoppingCart className="text-primary" size={32} />
-            <h1 className="text-4xl font-black text-white">Mi Carrito</h1>
-          </div>
-          <p className="relative z-10 text-white/60">{getTotalItems()} producto{getTotalItems() !== 1 ? 's' : ''}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+            className="relative z-10 flex flex-col gap-4"
+          >
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="premium-chip">
+                <ShoppingCart size={14} className="text-primary" />
+                Carrito activo
+              </span>
+              <span className="premium-chip">
+                <Sparkles size={14} className="text-secondary" />
+                Compra asistida
+              </span>
+              <span className="premium-chip">
+                <ShieldCheck size={14} className="text-primary" />
+                Sesion segura
+              </span>
+            </div>
+
+            <div>
+              <h1 className="text-4xl font-black text-white md:text-5xl">Mi Carrito</h1>
+              <p className="mt-2 max-w-2xl text-sm text-white/68">
+                {getTotalItems()} producto{getTotalItems() !== 1 ? 's' : ''} listos para coordinar con el vendedor y cerrar la compra sin friccion.
+              </p>
+            </div>
+          </motion.div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-10">
         {cartItems.length > 0 && (
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            <Card className="rounded-2xl border-white/10 bg-[#0c1d31]/90 p-4">
-              <p className="text-xs uppercase tracking-wide text-white/45">Productos</p>
-              <p className="mt-1 text-2xl font-black text-white">{getTotalItems()}</p>
-            </Card>
-            <Card className="rounded-2xl border-white/10 bg-[#0c1d31]/90 p-4">
-              <p className="text-xs uppercase tracking-wide text-white/45">Subtotal</p>
-              <p className="mt-1 text-2xl font-black text-primary">${subtotal.toFixed(2)}</p>
-            </Card>
-            <Card className="rounded-2xl border-white/10 bg-[#0c1d31]/90 p-4">
-              <p className="text-xs uppercase tracking-wide text-white/45">Metodo</p>
-              <p className="mt-1 text-sm font-semibold text-white/80">{paymentMethod === 'sinpe' ? 'SINPE Movil' : 'Efectivo'}</p>
-            </Card>
+          <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { label: 'Productos', value: getTotalItems(), icon: ShoppingCart },
+              { label: 'Subtotal', value: `$${subtotal.toFixed(2)}`, icon: Sparkles, accent: true },
+              { label: 'Metodo', value: paymentMethod === 'sinpe' ? 'SINPE Movil' : 'Efectivo', icon: CreditCard },
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="surface-panel p-4"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-white/45">{stat.label}</p>
+                    <p className={`mt-1 text-2xl font-black ${stat.accent ? 'text-primary' : 'text-white'}`}>{stat.value}</p>
+                  </div>
+                  <div className={`flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 ${stat.accent ? 'bg-primary/15 text-primary' : 'bg-white/5 text-white/75'}`}>
+                    <stat.icon size={20} />
+                  </div>
+                </div>
+              </motion.div>
+            ))}
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_0.95fr]">
+          <div className="space-y-4">
             {cartItems.length === 0 ? (
-              <div className="min-h-[70vh] flex items-center">
-                <Card className="relative w-full overflow-hidden border-white/12 bg-[#0c1d31]/90 text-center shadow-[0_25px_60px_rgba(0,0,0,0.35)]">
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,184,73,0.18),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,214,0,0.2),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(37,99,235,0.18),transparent_50%)]" />
-                  <CardContent className="relative z-10 p-12">
-                    <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-primary">
-                      <ShoppingCart size={28} />
-                    </div>
-                    <p className="text-3xl font-black text-white">Tu carrito esta vacio</p>
-                    <p className="mt-2 text-white/65">
-                      Guarda productos y completa tu compra cuando quieras.
-                    </p>
-                    <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                      <Button asChild className="bg-primary text-[#071425] hover:brightness-110">
-                        <Link href="/">
-                          Explorar productos
-                          <ArrowRight size={18} className="ml-2" />
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline" className="border-white/20 bg-white/10 text-white/80 hover:bg-white/20">
-                        <Link href="/deals">
-                          Ver ofertas
-                          <Zap size={16} className="ml-2" />
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {cartItems.map((item, idx) => (
-                  <Card
-                    key={item.id}
-                    className="rounded-2xl border border-white/10 bg-[#0c1d31]/90 p-4 flex gap-4 group animate-fadeIn hover:-translate-y-0.5 hover:border-primary/35 hover:shadow-[0_20px_40px_rgba(0,0,0,0.35)] transition-all duration-300"
-                    style={{ animationDelay: `${idx * 50}ms` }}
+              <motion.div
+                initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.45 }}
+                className="surface-panel-strong relative overflow-hidden text-center"
+              >
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,184,73,0.16),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,214,0,0.18),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(37,99,235,0.16),transparent_50%)]" />
+                <motion.div
+                  animate={{ opacity: [0.22, 0.5, 0.22], scale: [1, 1.08, 1] }}
+                  transition={{ duration: 4.5, repeat: Infinity, ease: 'easeInOut' }}
+                  className="pointer-events-none absolute -left-10 top-8 h-40 w-40 rounded-full bg-primary/10 blur-3xl"
+                />
+                <motion.div
+                  animate={{ opacity: [0.18, 0.42, 0.18], scale: [1, 1.1, 1] }}
+                  transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
+                  className="pointer-events-none absolute -right-8 bottom-0 h-44 w-44 rounded-full bg-secondary/10 blur-3xl"
+                />
+                <CardContent className="relative z-10 px-8 py-16 md:px-12">
+                  <motion.div
+                    animate={{ y: [0, -5, 0], scale: [1, 1.04, 1] }}
+                    transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
+                    className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-3xl border border-white/12 bg-white/10 text-primary shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
                   >
-                    {/* Product Image */}
-                    <div className="w-24 h-24 overflow-hidden bg-white/5 rounded-xl flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 border border-white/10">
+                    <ShoppingCart size={30} />
+                  </motion.div>
+                  <p className="text-3xl font-black text-white md:text-4xl">Tu carrito está vacío</p>
+                  <p className="mx-auto mt-3 max-w-lg text-white/65">
+                    Explora productos, guarda favoritos y vuelve cuando quieras. Todo lo que agregues aquí se conecta con tu cuenta.
+                  </p>
+                  <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
+                    {['Compra rápida', 'Chat con vendedor', 'Sin fricción'].map((label) => (
+                      <span key={label} className="premium-chip bg-white/5">
+                        <Sparkles size={12} className="text-primary" />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                  <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+                    <Button asChild className="premium-cta">
+                      <Link href="/">
+                        Explorar productos
+                        <ArrowRight size={18} />
+                      </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="border-white/15 bg-white/5 text-white/80 hover:bg-white/10">
+                      <Link href="/deals">
+                        Ver ofertas
+                        <Zap size={16} className="ml-2" />
+                      </Link>
+                    </Button>
+                  </div>
+                </CardContent>
+              </motion.div>
+            ) : (
+              <AnimatePresence>
+              {cartItems.map((item, idx) => (
+                <motion.div
+                  key={item.id}
+                  initial={{ opacity: 0, y: 14 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.35, delay: idx * 0.05 }}
+                  whileHover={{ y: -4 }}
+                  className="surface-panel-strong group overflow-hidden p-4 md:p-5"
+                >
+                  <div className="flex flex-col gap-4 md:flex-row md:items-stretch">
+                    <div className="relative h-28 w-full overflow-hidden rounded-2xl border border-white/10 bg-white/5 md:h-32 md:w-32 md:flex-shrink-0">
                       <SmartImage
                         src={item.imageUrl || getDesignIllustration(`cart-${item.id}-${item.name}`)}
                         alt={item.name}
-                        width={96}
-                        height={96}
-                        className="h-full w-full object-cover"
+                        width={128}
+                        height={128}
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                       />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#071425]/40 to-transparent" />
                     </div>
 
-                    {/* Product Info */}
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-white group-hover:text-primary transition-colors mb-1">{item.name}</h3>
-                      <p className="text-sm text-white/60 mb-3">Disponible: Stock ilimitado</p>
+                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-4">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-xl font-bold text-white transition-colors group-hover:text-primary">{item.name}</h3>
+                          <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
+                            Disponible
+                          </span>
+                        </div>
+                        <p className="max-w-2xl text-sm text-white/60">
+                          Coordinacion por chat vinculada a tu cuenta. Puedes ajustar cantidades antes de enviar la solicitud.
+                        </p>
+                      </div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-2 bg-white/5 rounded-lg w-fit p-2">
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="p-1.5 rounded hover:bg-white/10 transition-colors hover:text-primary text-white"
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <input
-                          type="number"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateQuantity(item.id, Math.max(1, parseInt(e.target.value) || 1))
-                          }
-                          className="w-12 text-center border-0 bg-transparent font-semibold text-white focus:outline-none"
-                        />
-                        <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="p-1.5 rounded hover:bg-white/10 transition-colors hover:text-primary text-white"
-                        >
-                          <Plus size={16} />
-                        </button>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <div className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 p-1.5">
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/75 transition hover:bg-white/10 hover:text-primary"
+                            aria-label="Disminuir cantidad"
+                          >
+                            <Minus size={16} />
+                          </button>
+                          <input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => updateQuantity(item.id, Math.max(1, parseInt(e.target.value) || 1))}
+                            className="w-14 border-0 bg-transparent text-center text-sm font-bold text-white focus:outline-none"
+                          />
+                          <button
+                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/75 transition hover:bg-white/10 hover:text-primary"
+                            aria-label="Aumentar cantidad"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        </div>
+
+                        <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2">
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Cantidad</p>
+                          <p className="text-sm font-semibold text-white">{item.quantity} unidad{item.quantity !== 1 ? 'es' : ''}</p>
+                        </div>
                       </div>
                     </div>
 
-                    {/* Price and Delete */}
-                    <div className="text-right flex flex-col justify-between">
+                    <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left md:min-w-[190px] md:text-right">
                       <div>
-                        <p className="text-2xl font-black text-primary">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </p>
-                        <p className="text-sm text-white/40 line-through">
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Total item</p>
+                        <p className="mt-1 text-3xl font-black text-primary">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-xs text-white/40 line-through">
                           ${(item.price * 1.2 * item.quantity).toFixed(2)}
                         </p>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-red-400 hover:bg-red-500/10 p-2 rounded-lg transition-all hover:scale-110"
-                      >
-                        <Trash2 size={20} />
-                      </button>
+
+                      <div className="flex md:justify-end">
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 hover:text-white"
+                        >
+                          <Trash2 size={16} />
+                          Eliminar
+                        </button>
+                      </div>
                     </div>
-                  </Card>
+                  </div>
+                </motion.div>
                 ))}
-              </div>
+              </AnimatePresence>
             )}
           </div>
 
-          {/* Checkout Summary */}
           {cartItems.length > 0 && (
-            <div className="lg:col-span-1">
-              <Card className="rounded-2xl border border-white/10 bg-[#0c1d31]/90 sticky top-24 shadow-[0_18px_40px_rgba(0,0,0,0.35)] overflow-hidden">
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <motion.div
+                initial={{ opacity: 0, y: 14 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45 }}
+                className="surface-panel-strong overflow-hidden"
+              >
                 <div className="h-1 w-full bg-gradient-to-r from-primary via-[#ffd600] to-secondary" />
-                <CardHeader>
-                  <CardTitle className="text-2xl font-black text-white">Resumen</CardTitle>
+                <CardHeader className="space-y-2 border-b border-white/10 bg-white/[0.03]">
+                  <CardTitle className="text-2xl font-black text-white">Resumen de compra</CardTitle>
+                  <p className="text-sm text-white/55">Controla el total, el metodo de pago y la salida hacia mensajes.</p>
                 </CardHeader>
-                <CardContent className="pt-0">
 
-                {/* Items Breakdown */}
-                <div className="space-y-3 pb-4 border-b border-white/10 mb-6">
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60">Subtotal:</span>
-                    <span className="font-bold text-lg text-white">${subtotal.toFixed(2)}</span>
+                <CardContent className="space-y-6 p-5 md:p-6">
+                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-white/60">Subtotal</span>
+                      <span className="text-lg font-bold text-white">${subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex items-center gap-2 text-white/60">
+                        <Truck size={16} className="text-secondary" />
+                        Envío
+                      </span>
+                      <span className={`text-lg font-bold ${shipping === 0 ? 'text-primary' : 'text-white'}`}>
+                        {shipping === 0 ? 'GRATIS' : `$${shipping.toFixed(2)}`}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-white/60">Impuestos (10%)</span>
+                      <span className="text-lg font-bold text-white">${tax.toFixed(2)}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60 flex items-center gap-2">
-                      <Zap size={16} className="text-secondary" />
-                      Envío:
-                    </span>
-                    <span className={`font-bold text-lg ${shipping === 0 ? 'text-primary' : 'text-white'}`}>
-                      {shipping === 0 ? 'GRATIS' : `$${shipping.toFixed(2)}`}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-white/60">Impuestos (10%):</span>
-                    <span className="font-bold text-lg text-white">${tax.toFixed(2)}</span>
-                  </div>
-                </div>
 
-                {/* Total */}
-                <div className="mb-6 p-4 bg-gradient-to-r from-white/10 to-white/[0.04] rounded-xl border border-white/10">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-bold text-white">Total:</span>
-                    <span className="text-3xl font-black text-primary">${total.toFixed(2)}</span>
+                  <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/15 via-white/[0.06] to-secondary/15 p-5">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="text-lg font-bold text-white">Total</span>
+                      <span className="text-4xl font-black text-primary">${total.toFixed(2)}</span>
+                    </div>
+                    {shipping === 0 ? (
+                      <p className="mt-2 text-sm font-semibold text-primary">Envío gratis activado por tu monto actual.</p>
+                    ) : (
+                      <p className="mt-2 text-sm text-white/60">Agrega mas productos para desbloquear envío gratis.</p>
+                    )}
                   </div>
-                </div>
 
-                {/* Free Shipping Banner */}
-                {shipping === 0 && (
-                  <div className="mb-4 p-3 bg-primary/10 border border-primary/20 rounded-lg text-center">
-                    <p className="text-sm font-semibold text-primary">
-                      ✓ ¡Envío gratis en tu compra!
-                    </p>
+                  <div>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-semibold text-white">Metodo de pago</p>
+                      <span className="text-xs text-white/45">Se usa en el mensaje al vendedor</span>
+                    </div>
+                    <RadioGroup
+                      value={paymentMethod}
+                      onValueChange={(value) => setPaymentMethod(value as 'sinpe' | 'cash')}
+                      className="space-y-3"
+                    >
+                      <label className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 text-sm font-semibold transition ${paymentMethod === 'sinpe' ? 'border-primary/40 bg-primary/10 text-white shadow-[0_10px_24px_rgba(29,184,73,0.12)]' : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/8'}`}>
+                        <span className="flex items-center gap-3">
+                          <RadioGroupItem value="sinpe" id="pay-sinpe" className="border-white/30" />
+                          <CreditCard size={16} className="text-secondary" />
+                          SINPE Movil
+                        </span>
+                        <span className="text-xs text-white/50">Instantaneo</span>
+                      </label>
+                      <label className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 text-sm font-semibold transition ${paymentMethod === 'cash' ? 'border-primary/40 bg-primary/10 text-white shadow-[0_10px_24px_rgba(29,184,73,0.12)]' : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/8'}`}>
+                        <span className="flex items-center gap-3">
+                          <RadioGroupItem value="cash" id="pay-cash" className="border-white/30" />
+                          <Wallet size={16} className="text-secondary" />
+                          Efectivo
+                        </span>
+                        <span className="text-xs text-white/50">Contra entrega</span>
+                      </label>
+                    </RadioGroup>
                   </div>
-                )}
 
-                <div className="mb-5">
-                  <p className="text-sm font-semibold text-white mb-3">Metodo de pago</p>
-                  <RadioGroup
-                    value={paymentMethod}
-                    onValueChange={(value) => setPaymentMethod(value as 'sinpe' | 'cash')}
-                    className="space-y-2"
+                  <Button
+                    onClick={handleProceedToPurchase}
+                    disabled={isProcessingCheckout}
+                    className="premium-cta w-full"
                   >
-                    <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:border-white/20">
-                      <span className="flex items-center gap-2">
-                        <RadioGroupItem value="sinpe" id="pay-sinpe" className="border-white/30" />
-                        <CreditCard size={16} className="text-secondary" /> SINPE Movil
-                      </span>
-                      <span className="text-xs text-white/50">Instantaneo</span>
-                    </label>
-                    <label className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-semibold text-white/80 transition hover:border-white/20">
-                      <span className="flex items-center gap-2">
-                        <RadioGroupItem value="cash" id="pay-cash" className="border-white/30" />
-                        <Wallet size={16} className="text-secondary" /> Efectivo
-                      </span>
-                      <span className="text-xs text-white/50">Contra entrega</span>
-                    </label>
-                  </RadioGroup>
-                </div>
+                    <span>{isProcessingCheckout ? 'Enviando solicitud...' : 'Proceder a la compra'}</span>
+                    <ArrowRight size={20} />
+                  </Button>
 
-                {/* Checkout Button */}
-                <Button
-                  onClick={handleProceedToPurchase}
-                  disabled={isProcessingCheckout}
-                  className="w-full mb-3 inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] px-4 py-3 text-lg font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.35)] transition hover:-translate-y-0.5 disabled:opacity-70"
-                >
-                  <span>{isProcessingCheckout ? 'Enviando solicitud...' : 'Proceder a la compra'}</span>
-                  <ArrowRight size={20} />
-                </Button>
+                  <Button asChild variant="outline" className="w-full border-white/15 bg-white/5 text-white/80 hover:bg-white/10">
+                    <Link href="/">
+                      Continuar comprando
+                      <ArrowRight size={18} className="ml-2" />
+                    </Link>
+                  </Button>
 
-                {/* Continue Shopping */}
-                <Button asChild variant="outline" className="w-full border-white/15 bg-white/5 text-white/80 hover:bg-white/10">
-                  <Link href="/">
-                    Continuar Comprando
-                    <ArrowRight size={18} className="ml-2" />
-                  </Link>
-                </Button>
-
-                {/* Security Badge */}
-                <Separator className="my-6 bg-white/10" />
-                <div className="rounded-lg bg-white/5 p-4 text-center border border-white/10">
-                  <p className="text-xs text-white/70 font-semibold">
-                    🔒 Tu compra está 100% protegida
-                  </p>
-                </div>
+                  <Separator className="bg-white/10" />
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                      <ShieldCheck size={18} className="mx-auto text-primary" />
+                      <p className="mt-2 text-xs font-semibold text-white/70">Compra protegida</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                      <Truck size={18} className="mx-auto text-secondary" />
+                      <p className="mt-2 text-xs font-semibold text-white/70">Entrega coordinada por chat</p>
+                    </div>
+                  </div>
                 </CardContent>
-              </Card>
+              </motion.div>
             </div>
           )}
         </div>

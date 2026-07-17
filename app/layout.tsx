@@ -10,9 +10,10 @@ import type { Metadata } from 'next';
 import { Poppins, Outfit } from 'next/font/google';
 import './globals.css';
 import dynamic from 'next/dynamic';
-import { AuthProvider } from '@/context/AuthContext';
-import { ThemeProvider } from '@/context/ThemeContext';
+import { Suspense } from 'react';
+import GlobalProviders from '@/components/GlobalProviders';
 import { cn } from "@/lib/utils";
+import { PageTransition } from '@/components/PageTransition';
 
 const Navbar = dynamic(() => import('@/components/Navbar'), { ssr: false, loading: () => null });
 const ConditionalFooter = dynamic(() => import('@/components/ConditionalFooter'), { ssr: false, loading: () => null });
@@ -44,18 +45,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es" className={cn(poppins.variable, outfit.variable, "font-sans")} suppressHydrationWarning>
-      <body className="theme-unified font-poppins overflow-x-hidden bg-[#071425]">
-        <div className="app-shell-overlay fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(255,230,0,0.08),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(37,99,235,0.18),transparent_36%),linear-gradient(180deg,#071425_0%,#0a1a2d_50%,#0f2139_100%)]" />
-        <ThemeProvider>
-          <AuthProvider>
+      <body className="theme-unified font-poppins overflow-x-hidden bg-[var(--background)] text-[var(--foreground)]">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var key='kivra-theme';var theme=localStorage.getItem(key);if(theme!=='light'&&theme!=='dark'){theme='dark';}document.documentElement.dataset.theme=theme;document.documentElement.style.colorScheme=theme;document.documentElement.classList.toggle('dark',theme==='dark');document.body.dataset.theme=theme;document.body.style.colorScheme=theme;document.body.classList.toggle('dark',theme==='dark');}catch(e){document.documentElement.dataset.theme='dark';document.documentElement.style.colorScheme='dark';document.documentElement.classList.add('dark');document.body.dataset.theme='dark';document.body.style.colorScheme='dark';document.body.classList.add('dark');}})();`,
+          }}
+        />
+        <div className="app-shell-overlay fixed inset-0 -z-10 bg-[radial-gradient(circle_at_15%_15%,rgba(29,184,73,0.08),transparent_32%),radial-gradient(circle_at_82%_20%,rgba(37,99,235,0.12),transparent_36%),linear-gradient(180deg,#071425_0%,#0a1a2d_50%,#0f2139_100%)]" />
+        <Suspense fallback={null}>
+          <GlobalProviders>
             <Navbar />
             <RouteScrollToTop />
-            <main className="min-h-screen">
-              {children}
-            </main>
+            <PageTransition>
+              <div className="min-h-screen">{children}</div>
+            </PageTransition>
             <ConditionalFooter />
-          </AuthProvider>
-        </ThemeProvider>
+          </GlobalProviders>
+        </Suspense>
       </body>
     </html>
   );

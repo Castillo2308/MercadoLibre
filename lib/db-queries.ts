@@ -264,7 +264,7 @@ export async function createOrder(
 
   // Calcular totales
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + Number(item.unitPrice) * item.quantity,
+    (sum: number, item: (typeof cartItems)[number]) => sum + Number(item.unitPrice) * item.quantity,
     0
   );
   const tax = subtotal * 0.21; // 21% IVA
@@ -290,7 +290,7 @@ export async function createOrder(
       totalAmount: new Decimal(totalAmount),
       items: {
         createMany: {
-          data: cartItems.map((item) => ({
+          data: cartItems.map((item: (typeof cartItems)[number]) => ({
             productId: item.productId,
             sellerId: item.product.sellerId,
             quantity: item.quantity,
@@ -382,7 +382,7 @@ export async function createReview(data: {
   });
 
   const averageRating =
-    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+    reviews.reduce((sum: number, r: (typeof reviews)[number]) => sum + r.rating, 0) / reviews.length;
 
   await prisma.product.update({
     where: { id: data.productId },

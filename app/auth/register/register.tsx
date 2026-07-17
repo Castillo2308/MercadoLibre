@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { User, Mail, Lock, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { register } = useAuth();
+  const { startLoading } = useNavigationLoader();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -58,6 +60,7 @@ export default function Register() {
         password: formData.password,
         confirmPassword: formData.confirmPassword,
       });
+      startLoading();
       router.push('/auth/login');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrarse');

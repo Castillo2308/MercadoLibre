@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 import { NextRequest, NextResponse } from 'next/server';
 
+export const dynamic = 'force-dynamic';
+
 const SUPPORT_EMAIL = 'soporte@kivra.com';
 
 async function getCurrentUser(request: NextRequest) {
@@ -116,7 +118,7 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json({
-        data: messages.map((message) => ({
+        data: messages.map((message: (typeof messages)[number]) => ({
           id: message.id,
           content: message.content,
           createdAt: message.createdAt,

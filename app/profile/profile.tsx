@@ -36,6 +36,7 @@ import {
 import { useMemo, useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useRouter } from 'next/navigation';
 
@@ -43,6 +44,7 @@ export default function Profile() {
   const [activeTab, setActiveTab] = useState('overview');
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { startLoading } = useNavigationLoader();
   const { clearCart } = useShoppingCart();
   const router = useRouter();
   const isLightTheme = theme === 'light';
@@ -276,6 +278,7 @@ export default function Profile() {
 
               <button
                 onClick={() => {
+                  startLoading();
                   logout();
                   clearCart();
                   router.push('/');

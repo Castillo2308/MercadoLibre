@@ -10,6 +10,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getUserOrders } from '@/lib/db-queries';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 async function getCurrentUser(request: NextRequest) {
   const userId = request.headers.get('X-User-ID');
   if (!userId) return null;

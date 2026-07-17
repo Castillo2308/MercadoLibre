@@ -15,7 +15,13 @@ const THEME_STORAGE_KEY = 'kivra-theme';
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<ThemeMode>('dark');
+  const [theme, setThemeState] = useState<ThemeMode>(() => {
+    if (typeof document === 'undefined') {
+      return 'dark';
+    }
+
+    return document.documentElement.dataset.theme === 'light' ? 'light' : 'dark';
+  });
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
@@ -24,8 +30,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    const prefersLight = window.matchMedia?.('(prefers-color-scheme: light)').matches;
-    setThemeState(prefersLight ? 'light' : 'dark');
+    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
+    setThemeState(prefersDark ? 'dark' : 'dark');
   }, []);
 
   useEffect(() => {
@@ -33,6 +39,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     document.body.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
     document.body.style.colorScheme = theme;
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    document.body.classList.toggle('dark', theme === 'dark');
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
   }, [theme]);
 

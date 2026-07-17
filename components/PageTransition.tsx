@@ -14,10 +14,11 @@ import { motion } from 'framer-motion';
 export const PageTransition = ({ children }: { children: ReactNode }) => {
   return (
     <motion.div
-      initial={{ opacity: 0, x: 100 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -100 }}
-      transition={{ duration: 0.6, ease: 'easeInOut' }}
+      initial={{ opacity: 0, y: 14, scale: 0.995 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.995 }}
+      transition={{ duration: 0.45, ease: 'easeOut' }}
+      style={{ willChange: 'transform, opacity' }}
     >
       {children}
     </motion.div>

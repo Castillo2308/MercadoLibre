@@ -11,6 +11,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 import prisma from '@/lib/prisma';
 
+export const dynamic = 'force-dynamic';
+
 async function getUserCart(userId: string) {
   const cart = await prisma.cart.findUnique({
     where: { userId },

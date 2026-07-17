@@ -2,7 +2,7 @@
 
 /**
  * messages.tsx
- * 
+ *
  * Página de mensajería/chat.
  * Permite que los usuarios se comuniquen con:
  * - Otros usuarios compradores
@@ -14,18 +14,18 @@
  * - Notificaciones de mensajes nuevos
  */
 
-import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Send, UserPlus, Sparkles, MessageSquare, ShieldCheck } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { MessageSquare, Search, Send, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-import { getDesignAvatar } from '@/lib/design-api';
-import { SmartImage } from '@/components/ui/smart-image';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { SmartImage } from '@/components/ui/smart-image';
+import { getDesignAvatar } from '@/lib/design-api';
 
 interface Conversation {
   userId: string;
@@ -45,13 +45,14 @@ interface Message {
   isOwn: boolean;
 }
 
+const getConversationStorageKey = (userId: string) => `kivra:last-chat:${userId}`;
+
 export default function Messages() {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isAuthReady } = useAuth();
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
-
   const [messageText, setMessageText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [newRecipientEmail, setNewRecipientEmail] = useState('');
@@ -115,20 +116,27 @@ export default function Messages() {
 
       setConversations(nextConversations);
 
-      if (!selectedUserId && nextConversations.length > 0) {
-        setSelectedUserId(nextConversations[0].userId);
+      if (selectedUserId && !nextConversations.some((conversation) => conversation.userId === selectedUserId)) {
+        setSelectedUserId('');
+      }
+
+      if (!selectedUserId) {
+        const storedSelected = localStorage.getItem(getConversationStorageKey(user.id));
+        const preferredConversation =
+          nextConversations.find((conversation) => conversation.userId === selectedFromQuery) ||
+          nextConversations.find((conversation) => conversation.userId === storedSelected) ||
+          nextConversations[0];
+
+        if (preferredConversation) {
+          setSelectedUserId(preferredConversation.userId);
+        }
       }
     } catch (error) {
       console.error(error);
     } finally {
       setLoadingConversations(false);
     }
-  }, [selectedUserId, user?.id]);
-
-  useEffect(() => {
-    if (!selectedFromQuery || selectedUserId) return;
-    setSelectedUserId(selectedFromQuery);
-  }, [selectedFromQuery, selectedUserId]);
+  }, [selectedFromQuery, selectedUserId, user?.id]);
 
   const fetchMessages = useCallback(async (otherUserId: string) => {
     if (!user?.id || !otherUserId) return;
@@ -161,31 +169,36 @@ export default function Messages() {
   }, [user?.id]);
 
   useEffect(() => {
-    if (!isAuthenticated) return;
+    if (!isAuthReady || !isAuthenticated || !user?.id) return;
     fetchConversations();
-  }, [isAuthenticated, fetchConversations]);
+  }, [isAuthReady, isAuthenticated, fetchConversations, user?.id]);
 
   useEffect(() => {
-    if (!selectedUserId) return;
+    if (!selectedFromQuery || selectedUserId) return;
+    setSelectedUserId(selectedFromQuery);
+  }, [selectedFromQuery, selectedUserId]);
+
+  useEffect(() => {
+    if (!selectedUserId || !user?.id) return;
+    localStorage.setItem(getConversationStorageKey(user.id), selectedUserId);
     fetchMessages(selectedUserId);
-  }, [selectedUserId, fetchMessages]);
+  }, [fetchMessages, selectedUserId, user?.id]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user?.id) return;
+    if (!isAuthReady || !isAuthenticated || !user?.id) return;
 
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       fetchConversations();
       if (selectedUserId) {
         fetchMessages(selectedUserId);
       }
     }, 5000);
 
-    return () => clearInterval(interval);
-  }, [isAuthenticated, selectedUserId, fetchConversations, fetchMessages, user?.id]);
+    return () => window.clearInterval(interval);
+  }, [fetchConversations, fetchMessages, isAuthReady, isAuthenticated, selectedUserId, user?.id]);
 
   const handleSendMessage = async () => {
-    if (!messageText.trim()) return;
-    if (!user?.id) return;
+    if (!messageText.trim() || !user?.id) return;
 
     let recipientId = selectedUserId;
     const destinationEmail = newRecipientEmail.trim().toLowerCase();
@@ -242,7 +255,20 @@ export default function Messages() {
     [conversations, searchQuery]
   );
 
-  const selectedConversation = conversations.find((c) => c.userId === selectedUserId);
+  const selectedConversation = conversations.find((conversation) => conversation.userId === selectedUserId);
+  const accountLabel = user ? `${user.firstName} ${user.lastName}`.trim() : 'Cuenta activa';
+
+  if (!isAuthReady) {
+    return (
+      <div className="min-h-screen bg-[#071425]">
+        <div className="container mx-auto px-4 py-16">
+          <Card className="mx-auto max-w-2xl rounded-3xl border-white/10 bg-[#0c1d31]/90 p-10 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
+            <p className="text-white/65">Cargando tu cuenta...</p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated || !user) {
     return (
@@ -254,8 +280,7 @@ export default function Messages() {
             </div>
             <h2 className="text-2xl font-black text-white">Inicia sesion para usar Mensajes</h2>
             <p className="mt-2 text-white/65">
-              La mensajeria guarda conversaciones reales en la base de datos, por eso
-              necesitas una sesion activa.
+              La mensajeria guarda conversaciones reales en la base de datos y se vincula a tu cuenta activa.
             </p>
           </Card>
         </div>
@@ -272,19 +297,36 @@ export default function Messages() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.45 }}
-            className="relative z-10 flex flex-col gap-3"
+            className="relative z-10 flex flex-col gap-4"
           >
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white/70">
-              <MessageSquare size={14} className="text-primary" /> Mensajeria
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="premium-chip">
+                <MessageSquare size={14} className="text-primary" /> Mensajería
+              </span>
+              <span className="premium-chip">
+                <Sparkles size={14} className="text-secondary" /> Conectada a tu cuenta
+              </span>
+              <span className="premium-chip">
+                <ShieldCheck size={14} className="text-primary" /> Historial persistente
+              </span>
             </div>
-            <h1 className="text-4xl font-black text-white md:text-5xl">Conversaciones en vivo</h1>
-            <p className="max-w-2xl text-sm text-white/65">
-              Gestiona chats, crea nuevos contactos y recibe ayuda directa del soporte de Kivra.
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <Badge className="border-white/20 bg-white/10 text-white/80">Mensajeria privada</Badge>
-              <Badge className="border-primary/30 bg-primary/10 text-primary">Tiempo real</Badge>
-              <Badge className="border-secondary/30 bg-secondary/10 text-secondary">Marketplace</Badge>
+            <div>
+              <h1 className="text-4xl font-black text-white md:text-5xl">Conversaciones en vivo</h1>
+              <p className="mt-2 max-w-2xl text-sm text-white/65">
+                Gestiona chats, crea nuevos contactos y continúa cualquier conversación desde la misma cuenta.
+              </p>
+            </div>
+            <div className="grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
+              <div className="rounded-3xl border border-white/12 bg-white/6 p-4 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cuenta activa</p>
+                <p className="mt-2 text-lg font-bold text-white">{accountLabel}</p>
+                <p className="text-sm text-white/58">{user.email}</p>
+              </div>
+              <div className="rounded-3xl border border-white/12 bg-white/6 p-4 backdrop-blur">
+                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Estado</p>
+                <p className="mt-2 text-lg font-bold text-primary">{filteredConversations.length} conversaciones activas</p>
+                <p className="text-sm text-white/58">Actualización automática cada 5 segundos.</p>
+              </div>
             </div>
           </motion.div>
         </div>
@@ -296,14 +338,14 @@ export default function Messages() {
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.45 }}
-            className="rounded-3xl border border-white/12 bg-[#0c1d31]/90 p-5 shadow-[0_24px_60px_rgba(0,0,0,0.38)]"
+            className="surface-panel-strong p-5"
           >
             <div className="mb-4">
               <div className="flex items-center gap-2 text-white">
                 <Sparkles size={18} className="text-secondary" />
                 <h2 className="text-xl font-black">Mensajes</h2>
               </div>
-              <p className="text-xs text-white/55">{filteredConversations.length} conversaciones activas</p>
+              <p className="text-xs text-white/55">{filteredConversations.length} conversaciones visibles</p>
             </div>
 
             <div className="relative mb-4">
@@ -311,79 +353,88 @@ export default function Messages() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar conversacion..."
-                className="w-full rounded-xl border-white/15 bg-white/5 py-2.5 pl-9 pr-3 text-sm text-white placeholder:text-white/40"
+                placeholder="Buscar conversación..."
+                className="w-full rounded-2xl border-white/15 bg-white/5 py-3 pl-9 pr-3 text-sm text-white placeholder:text-white/40"
               />
             </div>
 
-            <Card className="rounded-xl border-white/10 bg-white/5 p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-white/60 flex items-center gap-2">
+            <Card className="rounded-2xl border-white/10 bg-white/5 p-4">
+              <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60">
                 <UserPlus size={14} /> Nuevo chat
               </p>
-              <div className="mt-2 space-y-2">
+              <div className="mt-3 space-y-3">
                 <Input
                   value={newRecipientEmail}
                   onChange={(e) => setNewRecipientEmail(e.target.value)}
                   placeholder="Email del destinatario"
-                  className="w-full rounded-lg border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                  className="w-full rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
                 <Input
                   value={newRecipientName}
                   onChange={(e) => setNewRecipientName(e.target.value)}
-                  placeholder="Nombre (opcional)"
-                  className="w-full rounded-lg border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                  placeholder="Nombre de referencia (opcional)"
+                  className="w-full rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
+                <p className="text-[11px] leading-relaxed text-white/48">
+                  El email es el identificador real para iniciar el chat. El nombre solo ayuda a tener contexto visual.
+                </p>
               </div>
             </Card>
 
-            <ScrollArea className="mt-4 max-h-[520px] pr-1">
-              {loadingConversations && (
-                <p className="p-3 text-xs text-white/50">Cargando conversaciones...</p>
-              )}
+            <ScrollArea className="mt-4 max-h-[560px] pr-1">
+              <div className="space-y-3">
+                {loadingConversations && (
+                  <p className="p-3 text-xs text-white/50">Cargando conversaciones...</p>
+                )}
 
-              {!loadingConversations && filteredConversations.length === 0 && (
-                <Card className="rounded-xl border-white/10 bg-white/5 p-4 text-center text-xs text-white/60">
-                  No hay conversaciones todavia.
-                </Card>
-              )}
+                {!loadingConversations && filteredConversations.length === 0 && (
+                  <Card className="rounded-2xl border-white/10 bg-white/5 p-4 text-center text-xs text-white/60">
+                    No hay conversaciones todavia.
+                  </Card>
+                )}
 
-              <AnimatePresence>
-                {filteredConversations.map((conversation) => (
-                  <motion.button
-                    key={conversation.userId}
-                    layout
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    onClick={() => setSelectedUserId(conversation.userId)}
-                    className={`w-full rounded-xl border px-3 py-3 text-left transition ${
-                      selectedUserId === conversation.userId
-                        ? 'border-primary/50 bg-primary/10 shadow-[0_8px_20px_rgba(29,184,73,0.15)]'
-                        : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <SmartImage
-                        src={getDesignAvatar(conversation.name)}
-                        alt={conversation.name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-full border border-white/15 object-cover"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-white truncate">{conversation.name}</p>
-                        <p className="text-xs text-white/50 truncate">{conversation.lastMessage}</p>
+                <AnimatePresence>
+                  {filteredConversations.map((conversation) => (
+                    <motion.button
+                      key={conversation.userId}
+                      layout
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      onClick={() => setSelectedUserId(conversation.userId)}
+                      className={`w-full rounded-2xl border px-4 py-4 text-left transition ${
+                        selectedUserId === conversation.userId
+                          ? 'border-primary/50 bg-primary/10 shadow-[0_8px_20px_rgba(29,184,73,0.15)]'
+                          : 'border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        <SmartImage
+                          src={getDesignAvatar(conversation.name)}
+                          alt={conversation.name}
+                          width={44}
+                          height={44}
+                          className="h-11 w-11 rounded-full border border-white/15 object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-sm font-semibold text-white">{conversation.name}</p>
+                            <span className="text-[10px] text-white/40">{formatConversationTime(conversation.timestamp)}</span>
+                          </div>
+                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-white/52">
+                            {conversation.lastMessage}
+                          </p>
+                        </div>
+                        {conversation.unread > 0 && (
+                          <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5">
+                            {conversation.unread}
+                          </Badge>
+                        )}
                       </div>
-                      {conversation.unread > 0 && (
-                        <Badge className="bg-red-500 text-white text-[10px] px-2 py-0.5">
-                          {conversation.unread}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="mt-2 text-[10px] text-white/40">{formatConversationTime(conversation.timestamp)}</p>
-                  </motion.button>
-                ))}
-              </AnimatePresence>
+                    </motion.button>
+                  ))}
+                </AnimatePresence>
+              </div>
             </ScrollArea>
           </motion.section>
 
@@ -391,61 +442,76 @@ export default function Messages() {
             initial={{ opacity: 0, x: 12 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.45 }}
-            className="rounded-3xl border border-white/12 bg-[#0c1d31]/90 shadow-[0_24px_60px_rgba(0,0,0,0.38)] flex min-h-[720px] flex-col"
+            className="surface-panel-strong flex min-h-[720px] flex-col overflow-hidden"
           >
-            <div className="border-b border-white/10 px-6 py-4 bg-white/[0.03]">
+            <div className="border-b border-white/10 bg-white/[0.03] px-6 py-4">
               <div className="flex items-center gap-3">
                 <SmartImage
                   src={getDesignAvatar(selectedConversation?.name || newRecipientName || 'Chat')}
                   alt={selectedConversation?.name || newRecipientName || 'Chat'}
-                  width={40}
-                  height={40}
-                  className="h-10 w-10 rounded-full border border-white/15 object-cover"
+                  width={44}
+                  height={44}
+                  className="h-11 w-11 rounded-full border border-white/15 object-cover"
                 />
-                <div>
-                  <h3 className="text-lg font-bold text-white">
-                    {selectedConversation?.name || newRecipientName || 'Selecciona una conversacion'}
+                <div className="min-w-0 flex-1">
+                  <h3 className="truncate text-lg font-bold text-white">
+                    {selectedConversation?.name || newRecipientName || 'Selecciona una conversación'}
                   </h3>
-                  <p className="text-xs text-white/55">
+                  <p className="truncate text-xs text-white/55">
                     {selectedConversation?.email || newRecipientEmail || 'Sin destinatario'}
                   </p>
+                </div>
+                <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 md:block">
+                  {user.email}
                 </div>
               </div>
             </div>
 
             <ScrollArea className="flex-1 px-6 py-6">
-              {messages.length === 0 && (
-                <Card className="rounded-2xl border-white/10 bg-white/5 p-6 text-center text-sm text-white/60">
-                  Todavia no hay mensajes en esta conversacion.
-                </Card>
-              )}
+              <div className="space-y-5">
+                {messages.length === 0 && (
+                  <Card className="rounded-2xl border-white/10 bg-white/5 p-6 text-center text-sm text-white/60">
+                    Todavía no hay mensajes en esta conversación.
+                  </Card>
+                )}
 
-              <AnimatePresence>
-                {messages.map((message) => (
-                  <motion.div
-                    key={message.id}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`mb-3 flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div
-                      className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm shadow-lg md:max-w-[62%] ${
-                        message.isOwn
-                          ? 'bg-gradient-to-r from-primary to-secondary text-[#071425] rounded-br-md'
-                          : 'bg-white/10 text-white rounded-bl-md'
-                      }`}
+                <AnimatePresence>
+                  {messages.map((message) => (
+                    <motion.div
+                      key={message.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${message.isOwn ? 'justify-end' : 'justify-start'}`}
                     >
-                      <p>{message.text}</p>
-                      <p className={`text-[10px] mt-2 ${message.isOwn ? 'text-[#071425]/70' : 'text-white/60'}`}>
-                        {formatTime(message.timestamp)}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
+                      <div
+                        className={`max-w-[82%] rounded-[1.4rem] px-4 py-3 text-sm shadow-lg md:max-w-[64%] ${
+                          message.isOwn
+                            ? 'rounded-br-md bg-gradient-to-r from-primary to-secondary text-[#071425]'
+                            : 'rounded-bl-md border border-white/10 bg-white/10 text-white'
+                        }`}
+                      >
+                        <p className="leading-relaxed">{message.text}</p>
+                        <p className={`mt-2 text-[10px] ${message.isOwn ? 'text-[#071425]/70' : 'text-white/55'}`}>
+                          {formatTime(message.timestamp)}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
+              </div>
             </ScrollArea>
 
-            <div className="border-t border-white/10 bg-[#0a1a2d]/55 px-6 py-5 backdrop-blur">
+            <div className="border-t border-white/10 bg-[#0a1a2d]/70 px-6 py-5 backdrop-blur">
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-white/45">
+                <span className="premium-chip">
+                  <ShieldCheck size={12} className="text-primary" />
+                  Vinculado a tu sesión
+                </span>
+                <span className="premium-chip">
+                  <Sparkles size={12} className="text-secondary" />
+                  Espaciado más amplio
+                </span>
+              </div>
               <div className="flex gap-2">
                 <Input
                   value={messageText}
@@ -454,12 +520,12 @@ export default function Messages() {
                     if (e.key === 'Enter') handleSendMessage();
                   }}
                   placeholder="Escribe tu mensaje..."
-                  className="flex-1 rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
+                  className="flex-1 rounded-2xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
                 <Button
                   onClick={handleSendMessage}
                   disabled={sending || (!selectedUserId && !newRecipientEmail.trim())}
-                  className="rounded-xl bg-secondary px-4 py-2.5 text-white text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
+                  className="premium-cta h-12 px-4"
                 >
                   <Send size={18} />
                 </Button>
