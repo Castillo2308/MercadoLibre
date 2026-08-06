@@ -19,11 +19,26 @@ body {
   background: linear-gradient(180deg, #071425 0%, #0a1a2d 55%, #0f2139 100%);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
   min-height: 100vh;
 }
 
 body {
   @apply text-white overflow-x-hidden;
+  letter-spacing: -0.011em;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-outfit), sans-serif;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
+}
+
+h1 { letter-spacing: -0.035em; }
+h2 { letter-spacing: -0.028em; }
+
+p {
+  line-height: 1.6;
 }
 
 html[data-theme='light'],
@@ -144,8 +159,58 @@ html[data-theme='light'] .app-shell-overlay {
   html[data-theme='light'] .theme-unified .bg-\[\#0b182b\]\/80,
   html[data-theme='light'] .bg-\[\#0b182b\]\/80,
   html[data-theme='light'] .theme-unified .bg-\[\#0d1c31\]\/80,
-  html[data-theme='light'] .bg-\[\#0d1c31\]\/80 {
+  html[data-theme='light'] .bg-\[\#0d1c31\]\/80,
+  html[data-theme='light'] .theme-unified .bg-\[\#0b1b2f\]\/95,
+  html[data-theme='light'] .bg-\[\#0b1b2f\]\/95 {
     background-color: rgba(255, 255, 255, 0.84) !important;
+  }
+
+  /* Additional solid dark-navy surfaces used across cards/sections that were
+     missing from the light-theme allowlist (root cause of "islands" of dark
+     UI remaining after switching to light mode). */
+  html[data-theme='light'] .theme-unified .bg-\[\#05111f\],
+  html[data-theme='light'] .bg-\[\#05111f\],
+  html[data-theme='light'] .theme-unified .bg-\[\#122741\],
+  html[data-theme='light'] .bg-\[\#122741\],
+  html[data-theme='light'] .theme-unified .bg-\[\#112641\],
+  html[data-theme='light'] .bg-\[\#112641\],
+  html[data-theme='light'] .theme-unified .bg-\[\#122845\],
+  html[data-theme='light'] .bg-\[\#122845\] {
+    background-color: rgba(255, 255, 255, 0.94) !important;
+  }
+
+  /* Full-width CTA banners built with a hardcoded navy/red gradient used to
+     have white text hardcoded on top, which became unreadable (dark text on
+     dark background) once .text-white flipped color for light mode. */
+  html[data-theme='light'] .from-\[\#0f2139\],
+  html[data-theme='light'] .from-\[\#0f1f35\] {
+    --tw-gradient-from: #eef4ff var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  html[data-theme='light'] .via-\[\#132a46\] {
+    --tw-gradient-to: rgb(219 231 246 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #dbe7f6 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+  html[data-theme='light'] .to-\[\#1b3a62\] {
+    --tw-gradient-to: #eaf1fb var(--tw-gradient-to-position) !important;
+  }
+  html[data-theme='light'] .from-\[\#1a0a0a\] {
+    --tw-gradient-from: #fff5f2 var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  html[data-theme='light'] .via-\[\#1f1010\] {
+    --tw-gradient-to: rgb(255 231 224 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), #ffe7e0 var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+  }
+  html[data-theme='light'] .to-\[\#1a0a0a\] {
+    --tw-gradient-to: #fff5f2 var(--tw-gradient-to-position) !important;
+  }
+  html[data-theme='light'] .from-\[\#0d1c31\] {
+    --tw-gradient-from: #eef4ff var(--tw-gradient-from-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  html[data-theme='light'] .to-\[\#11233a\] {
+    --tw-gradient-to: #dbe7f6 var(--tw-gradient-to-position) !important;
   }
 
   html[data-theme='light'] .theme-unified .bg-white\/5,
@@ -155,7 +220,8 @@ html[data-theme='light'] .app-shell-overlay {
   html[data-theme='light'] .theme-unified .bg-white\/15,
   html[data-theme='light'] .bg-white\/15,
   html[data-theme='light'] .theme-unified .bg-white\/20,
-  html[data-theme='light'] .bg-white\/20 {
+  html[data-theme='light'] .bg-white\/20,
+  html[data-theme='light'] [class*="bg-white/"] {
     background-color: rgba(255, 255, 255, 0.82) !important;
   }
 
@@ -166,7 +232,8 @@ html[data-theme='light'] .app-shell-overlay {
   html[data-theme='light'] .theme-unified .border-white\/20,
   html[data-theme='light'] .border-white\/20,
   html[data-theme='light'] .theme-unified .border-white\/30,
-  html[data-theme='light'] .border-white\/30 {
+  html[data-theme='light'] .border-white\/30,
+  html[data-theme='light'] [class*="border-white/"] {
     border-color: rgba(15, 23, 42, 0.12) !important;
   }
 
@@ -281,6 +348,13 @@ html[data-theme='light'] .app-shell-overlay {
     color: rgba(15, 23, 42, 0.38) !important;
   }
 
+  /* Catch-all for any text-white/NN opacity value not explicitly listed
+     above (e.g. text-white/68, text-white/72, text-white/78...). Without
+     this, odd opacity values kept white text on light backgrounds. */
+  html[data-theme='light'] [class*="text-white/"] {
+    color: rgba(15, 23, 42, 0.72) !important;
+  }
+
   html[data-theme='light'] .card,
   html[data-theme='light'] .card-elevated,
   html[data-theme='light'] .glass,
@@ -312,6 +386,66 @@ html[data-theme='light'] .app-shell-overlay {
   html[data-theme='light'] .input-field::placeholder,
   html[data-theme='light'] .input-modern::placeholder {
     color: rgba(15, 23, 42, 0.45) !important;
+  }
+
+  /* Ad-hoc inputs across login/register/sell/messages/navbar use the raw
+     `placeholder:text-white/NN` utility instead of .input-field. Their
+     placeholder stayed literally white, becoming invisible once the input
+     background flipped to a light surface. This selector catches every
+     opacity variant in one place. */
+  html[data-theme='light'] [class*="placeholder:text-white/"]::placeholder {
+    color: rgba(15, 23, 42, 0.45) !important;
+  }
+
+  /* bg-gray-50/100/200 are forced dark-navy unconditionally by the
+     `.theme-unified` rules further below (so they match the dark theme by
+     default). In light mode that left small placeholder boxes (e.g. product
+     thumbnails without an image) stuck dark navy on an otherwise light page.
+     Give them a proper light-neutral color when data-theme='light'. */
+  html[data-theme='light'] .theme-unified .bg-gray-50,
+  html[data-theme='light'] .bg-gray-50,
+  html[data-theme='light'] .theme-unified .bg-gray-100,
+  html[data-theme='light'] .bg-gray-100,
+  html[data-theme='light'] .theme-unified .bg-gray-200,
+  html[data-theme='light'] .bg-gray-200 {
+    background-color: rgba(15, 23, 42, 0.06) !important;
+  }
+
+  /* Same issue for .border-border: the unconditional rule below hardcodes a
+     translucent WHITE border (meant for the dark theme) onto every badge,
+     avatar and outline button that uses it, which is nearly invisible on a
+     light background. */
+  html[data-theme='light'] .theme-unified .border-border {
+    border-color: rgba(15, 23, 42, 0.14) !important;
+  }
+
+  /* Same issue for .bg-white and the .text-gray-700/600/500/400 scale: the
+     unconditional `.theme-unified` rules further below force them to a dark
+     navy card + light gray text (tuned for the dark theme). In light mode
+     that produced dark text on a dark card sitting on an otherwise light
+     page (e.g. the footer newsletter box), making it unreadable. */
+  html[data-theme='light'] .theme-unified .bg-white {
+    background-color: #ffffff !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-gray-700 {
+    color: #334155 !important;
+  }
+
+  html[data-theme='light'] .theme-unified .text-gray-600,
+  html[data-theme='light'] .theme-unified .text-gray-500,
+  html[data-theme='light'] .theme-unified .text-gray-400 {
+    color: #64748b !important;
+  }
+
+  html[data-theme='light'] .theme-unified .from-gray-50 {
+    --tw-gradient-from: #f8fafc var(--tw-gradient-from-position) !important;
+    --tw-gradient-to: rgb(248 250 252 / 0) var(--tw-gradient-to-position) !important;
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+
+  html[data-theme='light'] .theme-unified .to-white {
+    --tw-gradient-to: #ffffff var(--tw-gradient-to-position) !important;
   }
 
   html[data-theme='light'] .theme-unified .from-primary,
@@ -753,6 +887,31 @@ html[data-theme='light'] .app-shell-overlay {
 
 .premium-chip {
   @apply inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-white/80 backdrop-blur;
+}
+
+/* .surface-panel / .surface-panel-strong / .premium-chip set their
+   background via a plain (unlayered) CSS rule, which always wins over the
+   Tailwind `bg-card` utility regardless of theme. That hardcoded dark-navy
+   background never adapted to light mode, so every card built on top of it
+   (sell form, messages panels, cart, profile stats, deals, product page...)
+   stayed dark with mismatched light-colored children. These overrides are
+   unlayered too and more specific, so they win without needing !important. */
+html[data-theme='light'] .surface-panel {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+}
+
+html[data-theme='light'] .surface-panel-strong {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(15, 23, 42, 0.1);
+  box-shadow: 0 28px 70px rgba(15, 23, 42, 0.12);
+}
+
+html[data-theme='light'] .premium-chip {
+  background: rgba(15, 23, 42, 0.05);
+  border-color: rgba(15, 23, 42, 0.12);
+  color: rgba(15, 23, 42, 0.75);
 }
 
 .premium-cta {

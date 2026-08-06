@@ -14,14 +14,14 @@ export async function GET() {
     const deals = await prisma.product.findMany({
       where: {
         isActive: true,
-        discountPercentage: { not: null },
+        originalPrice: { not: null },
       },
       include: {
         images: true,
         seller: { select: { firstName: true, lastName: true } },
       },
-      orderBy: { discountPercentage: 'desc' },
-      take: 10,
+      orderBy: { createdAt: 'desc' },
+      take: 20,
     });
 
     return NextResponse.json(deals);

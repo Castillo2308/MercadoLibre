@@ -15,10 +15,12 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Facebook, Twitter, Instagram, Mail, ArrowRight, MapPin, Phone } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Footer() {
   const [email, setEmail] = useState('');
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isLightTheme = theme === 'light';
 
   const handleSubscribe = async () => {
@@ -58,8 +60,8 @@ export default function Footer() {
         <div className={`rounded-2xl p-8 mb-16 shadow-xl transition-all duration-300 transform hover:scale-105 ${isLightTheme ? 'bg-white border border-slate-200 hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)]' : 'bg-gradient-to-r from-primary to-primary-dark hover:shadow-2xl'}`}>
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
             <div>
-              <h3 className={`text-2xl font-bold mb-2 ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>¡Recibe Ofertas Especiales!</h3>
-              <p className={isLightTheme ? 'text-slate-600' : 'text-white/90'}>Suscríbete a nuestro newsletter para recibir las mejores ofertas</p>
+              <h3 className={`text-2xl font-bold mb-2 ${isLightTheme ? 'text-slate-900' : 'text-white'}`}>{t('footer.newsletterTitle')}</h3>
+              <p className={isLightTheme ? 'text-slate-600' : 'text-white/90'}>{t('footer.newsletterSubtitle')}</p>
             </div>
             <div className="w-full md:w-auto flex gap-2">
               <input
@@ -74,7 +76,7 @@ export default function Footer() {
                 className="bg-white text-primary px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-all duration-300 hover:scale-105 flex items-center gap-2"
               >
                 <Mail size={18} />
-                Suscribir
+                {t('footer.subscribe')}
               </button>
             </div>
           </div>
@@ -88,7 +90,7 @@ export default function Footer() {
               Sobre Kivra
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <ul className="space-y-3 text-gray-300">
+            <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
               {['Quiénes Somos', 'Carreras', 'Prensa', 'Blog'].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
@@ -106,7 +108,7 @@ export default function Footer() {
               Comprar
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <ul className="space-y-3 text-gray-300">
+            <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
               {['Categorías', 'Ofertas', 'Mis Compras', 'Devoluciones'].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
@@ -124,7 +126,7 @@ export default function Footer() {
               Vender
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <ul className="space-y-3 text-gray-300">
+            <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
               {['Registrar Producto', 'Mis Ventas', 'Herramientas', 'Centro de Ayuda'].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
@@ -142,7 +144,7 @@ export default function Footer() {
               Contacto
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <div className="space-y-3 text-gray-300">
+            <div className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
               <div className="flex items-center gap-2 hover:text-primary transition-colors">
                 <Phone size={16} />
                 <span>+506 6000 1234</span>
@@ -171,7 +173,7 @@ export default function Footer() {
                 <Link
                   key={label}
                   href={href}
-                  className="w-12 h-12 bg-white/10 hover:bg-primary text-white rounded-full flex items-center justify-center transition-all duration-300 hover:scale-125 group"
+                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-125 hover:bg-primary group ${isLightTheme ? 'bg-slate-900/5 text-slate-700 border border-slate-200' : 'bg-white/10 text-white'}`}
                 >
                   <Icon size={20} className="group-hover:text-gray-900 transition-colors" />
                 </Link>
@@ -184,9 +186,9 @@ export default function Footer() {
         <div className={isLightTheme ? 'my-8 border-t border-slate-200' : 'my-8 border-t border-gray-700'}></div>
 
         {/* Bottom Footer */}
-        <div className="flex flex-col md:flex-row justify-between items-center text-gray-400 text-sm gap-4">
+        <div className={`flex flex-col md:flex-row justify-between items-center text-sm gap-4 ${isLightTheme ? 'text-slate-500' : 'text-gray-400'}`}>
           <p className="text-center md:text-left">
-            &copy; 2026 Kivra. Todos los derechos reservados. ❤️
+            &copy; 2026 Kivra. {t('footer.rights')} ❤️
           </p>
           <div className="flex gap-6 flex-wrap justify-center">
             <Link href="#" className="hover:text-primary transition-colors duration-300">Privacidad</Link>

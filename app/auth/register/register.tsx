@@ -7,6 +7,7 @@ import { User, Mail, Lock, Phone } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -22,6 +23,7 @@ export default function Register() {
   const router = useRouter();
   const { register } = useAuth();
   const { startLoading } = useNavigationLoader();
+  const { t } = useLanguage();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -34,19 +36,19 @@ export default function Register() {
     setLoading(true);
 
     if (Object.values(formData).some((val) => !val)) {
-      setError('Por favor completa todos los campos');
+      setError(t('auth.fillAllFields'));
       setLoading(false);
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('auth.passwordsMismatch'));
       setLoading(false);
       return;
     }
 
     if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('auth.passwordMinLength'));
       setLoading(false);
       return;
     }
@@ -63,16 +65,17 @@ export default function Register() {
       startLoading();
       router.push('/auth/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrarse');
+      setError(err instanceof Error ? err.message : t('auth.registerError'));
       setLoading(false);
     }
   };
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#061321] px-4 py-10 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(29,184,73,0.2),transparent_35%),radial-gradient(circle_at_85%_20%,rgba(29,184,73,0.14),transparent_40%),linear-gradient(180deg,#061321_0%,#08192d_55%,#0b2137_100%)]" />
+      <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(180deg,#061321_0%,#08192d_55%,#0b2137_100%)] dark:block" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_18%,rgba(29,184,73,0.2),transparent_35%),radial-gradient(circle_at_85%_20%,rgba(29,184,73,0.14),transparent_40%)]" />
       <div className="pointer-events-none absolute -top-14 -left-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl animate-floatCard" />
-      <div className="pointer-events-none absolute -bottom-16 -right-12 h-72 w-72 rounded-full bg-secondary/20 blur-3xl animate-floatCard" style={{ animationDelay: '1.1s' }} />
+      <div className="pointer-events-none absolute -bottom-16 -right-12 h-72 w-72 rounded-full bg-blue-400/25 dark:bg-secondary/20 blur-3xl animate-floatCard" style={{ animationDelay: '1.1s' }} />
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -81,7 +84,7 @@ export default function Register() {
         className="relative z-10 w-full max-w-md rounded-2xl border border-white/15 bg-[#0c1d31]/85 p-8 shadow-[0_20px_48px_rgba(0,0,0,0.45)] backdrop-blur-md"
       >
         <h1 className="mb-2 text-center text-3xl font-black text-white animate-fadeInDown">Kivra</h1>
-        <h2 className="mb-6 text-center text-2xl font-black text-primary animate-fadeInUp">Crear Cuenta</h2>
+        <h2 className="mb-6 text-center text-2xl font-black text-primary animate-fadeInUp">{t('auth.createAccount')}</h2>
 
         {error && (
           <div className="mb-4 rounded-lg border border-red-400/35 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-200 animate-fadeInDown">
@@ -92,7 +95,7 @@ export default function Register() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-white/75">Nombre</label>
+              <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.firstName')}</label>
               <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
                 <User size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                 <input
@@ -100,14 +103,14 @@ export default function Register() {
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  placeholder="Tu nombre"
+                  placeholder={t('auth.firstNamePlaceholder')}
                   className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-white/75">Apellidos</label>
+              <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.lastName')}</label>
               <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
                 <User size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                 <input
@@ -115,7 +118,7 @@ export default function Register() {
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  placeholder="Tus apellidos"
+                  placeholder={t('auth.lastNamePlaceholder')}
                   className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
                 />
               </div>
@@ -124,7 +127,7 @@ export default function Register() {
 
           <div className="grid gap-4 md:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-semibold text-white/75">Correo Electronico</label>
+              <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.email')}</label>
               <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
                 <Mail size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                 <input
@@ -132,14 +135,14 @@ export default function Register() {
                   name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="tu@email.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-semibold text-white/75">Numero de Celular</label>
+              <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.phone')}</label>
               <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
                 <Phone size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                 <input
@@ -155,7 +158,7 @@ export default function Register() {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-white/75">Contrasena</label>
+            <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.password')}</label>
             <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
               <Lock size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
               <input
@@ -163,14 +166,14 @@ export default function Register() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder="Minimo 6 caracteres"
+                placeholder={t('auth.passwordMin6')}
                 className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-white/75">Confirmar Contrasena</label>
+            <label className="mb-2 block text-sm font-semibold text-white/75">{t('auth.confirmPassword')}</label>
             <div className="group flex items-center rounded-xl border border-white/20 bg-white/5 px-3 py-2.5 transition-all duration-300 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/40">
               <Lock size={18} className="mr-2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
               <input
@@ -178,7 +181,7 @@ export default function Register() {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                placeholder="Confirma tu contrasena"
+                placeholder={t('auth.confirmPasswordPlaceholder')}
                 className="w-full bg-transparent text-white placeholder:text-white/45 outline-none"
               />
             </div>
@@ -189,15 +192,15 @@ export default function Register() {
             disabled={loading}
             className="w-full rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
           >
-            {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+            {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
           </button>
         </form>
 
         <div className="mt-6 text-center text-white/70">
           <p>
-            Ya tienes cuenta?{' '}
+            {t('auth.haveAccount')}{' '}
             <Link href="/auth/login" className="font-semibold text-primary transition-colors hover:text-secondary">
-              Inicia sesion aqui
+              {t('auth.loginHere')}
             </Link>
           </p>
         </div>

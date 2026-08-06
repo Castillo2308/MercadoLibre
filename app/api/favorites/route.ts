@@ -33,7 +33,19 @@ export async function GET(request: NextRequest) {
     if (!currentUser) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const favs = await dbGetUserFavorites(currentUser.id);
-    const data = favs.map((f: any) => ({ id: f.product.id, product: { id: f.product.id, title: f.product.title || (f.product as any).name || '' } }));
+    const data = favs.map((f: any) => ({
+      id: f.product.id,
+      product: {
+        id: f.product.id,
+        title: f.product.title || (f.product as any).name || '',
+        price: f.product.price ? Number(f.product.price) : 0,
+        originalPrice: f.product.originalPrice ? Number(f.product.originalPrice) : null,
+        condition: f.product.condition || 'new',
+        mainImageUrl: f.product.mainImageUrl || null,
+        averageRating: f.product.averageRating || 0,
+        reviewCount: f.product.reviewCount || 0,
+      },
+    }));
     return NextResponse.json({ data });
   } catch (error) {
     console.error('GET /api/favorites error', error);

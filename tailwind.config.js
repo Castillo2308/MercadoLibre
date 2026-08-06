@@ -9,6 +9,8 @@ module.exports = {
       fontFamily: {
         poppins: ['var(--font-poppins)', 'sans-serif'],
         outfit: ['var(--font-outfit)', 'sans-serif'],
+        heading: ['var(--font-outfit)', 'sans-serif'],
+        sans: ['var(--font-poppins)', 'sans-serif'],
       },
       colors: {
         background: 'var(--background)',

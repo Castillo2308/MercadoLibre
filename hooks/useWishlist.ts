@@ -14,6 +14,12 @@ import { useAuth } from '@/context/AuthContext';
 interface WishlistItem {
   id: string;
   name: string;
+  price?: number;
+  originalPrice?: number | null;
+  condition?: string;
+  averageRating?: number;
+  reviewCount?: number;
+  mainImageUrl?: string | null;
 }
 
 export function useWishlist() {
@@ -43,7 +49,16 @@ export function useWishlist() {
           const res = await fetch('/api/favorites', { headers: { 'X-User-ID': user.id }, cache: 'no-store' });
           if (!res.ok) return;
           const payload = await res.json();
-          const items = (payload.data || []).map((f: any) => ({ id: String(f.product?.id || f.id), name: f.product?.title || f.product?.name || '' }));
+          const items = (payload.data || []).map((f: any) => ({
+            id: String(f.product?.id || f.id),
+            name: f.product?.title || f.product?.name || '',
+            price: f.product?.price ?? undefined,
+            originalPrice: f.product?.originalPrice ?? null,
+            condition: f.product?.condition ?? 'new',
+            averageRating: f.product?.averageRating ?? 0,
+            reviewCount: f.product?.reviewCount ?? 0,
+            mainImageUrl: f.product?.mainImageUrl ?? null,
+          }));
           setWishlist(items);
           localStorage.setItem('wishlist', JSON.stringify(items));
         } catch (e) {

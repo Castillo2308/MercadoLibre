@@ -11,6 +11,7 @@ import { Poppins, Outfit } from 'next/font/google';
 import './globals.css';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { Toaster } from 'react-hot-toast';
 import GlobalProviders from '@/components/GlobalProviders';
 import { cn } from "@/lib/utils";
 import { PageTransition } from '@/components/PageTransition';
@@ -60,6 +61,23 @@ export default function RootLayout({
               <div className="min-h-screen">{children}</div>
             </PageTransition>
             <ConditionalFooter />
+            <Toaster
+              position="bottom-center"
+              toastOptions={{
+                duration: 3200,
+                style: {
+                  background: '#0d1c31',
+                  color: '#fff',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: '1rem',
+                  padding: '10px 16px',
+                  fontSize: '0.875rem',
+                  boxShadow: '0 20px 45px rgba(0,0,0,0.45)',
+                },
+                success: { iconTheme: { primary: '#1DB849', secondary: '#06131f' } },
+                error: { iconTheme: { primary: '#FF6B6B', secondary: '#06131f' } },
+              }}
+            />
           </GlobalProviders>
         </Suspense>
       </body>

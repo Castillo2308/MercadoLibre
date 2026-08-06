@@ -18,9 +18,10 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { getDesignIllustration } from '@/lib/design-api';
 import { SmartImage } from '@/components/ui/smart-image';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Deal {
-  id: number;
+  id: string;
   name: string;
   originalPrice: number;
   discountedPrice: number;
@@ -28,8 +29,40 @@ interface Deal {
   timeLeft: string;
   soldCount: number;
   totalAvailable: number;
-  emoji: string;
+  imageUrl: string | null;
   badge: string;
+}
+
+const TIME_LEFT_OPTIONS = ['1h', '2h', '2.5h', '3h', '4h', '5h', '6h'];
+const BADGE_OPTIONS = ['Flash', 'Hot', 'Top', 'Popular', 'Nuevo', 'Ultimo'];
+
+interface ApiProduct {
+  id: string;
+  title: string;
+  price: string | number;
+  originalPrice: string | number | null;
+  quantitySold: number;
+  quantityAvailable: number;
+  mainImageUrl: string | null;
+  images: { imageUrl: string }[];
+}
+
+function mapDeal(product: ApiProduct, idx: number): Deal {
+  const price = Number(product.price);
+  const original = Number(product.originalPrice) || price;
+  const discount = original > price ? Math.round(100 - (price / original) * 100) : 0;
+  return {
+    id: product.id,
+    name: product.title,
+    originalPrice: original,
+    discountedPrice: price,
+    discount,
+    timeLeft: TIME_LEFT_OPTIONS[idx % TIME_LEFT_OPTIONS.length],
+    soldCount: product.quantitySold,
+    totalAvailable: product.quantitySold + product.quantityAvailable,
+    imageUrl: product.images?.[0]?.imageUrl || product.mainImageUrl,
+    badge: BADGE_OPTIONS[idx % BADGE_OPTIONS.length],
+  };
 }
 
 function Countdown({ seconds: initialSeconds }: { seconds: number }) {
@@ -59,19 +92,33 @@ function Countdown({ seconds: initialSeconds }: { seconds: number }) {
 }
 
 export default function Deals() {
-  const deals: Deal[] = [
-    { id: 1, name: 'iPhone 13 128GB', originalPrice: 799, discountedPrice: 599, discount: 25, timeLeft: '2h', soldCount: 234, totalAvailable: 500, emoji: '📱', badge: 'Flash' },
-    { id: 2, name: 'Samsung Galaxy S22', originalPrice: 899, discountedPrice: 649, discount: 28, timeLeft: '5h', soldCount: 187, totalAvailable: 300, emoji: '📱', badge: 'Hot' },
-    { id: 3, name: 'AirPods Pro', originalPrice: 249, discountedPrice: 179, discount: 28, timeLeft: '3h', soldCount: 456, totalAvailable: 600, emoji: '🎧', badge: 'Top' },
-    { id: 4, name: 'iPad Air 5', originalPrice: 599, discountedPrice: 449, discount: 25, timeLeft: '1h', soldCount: 89, totalAvailable: 200, emoji: '📱', badge: 'Ultimo' },
-    { id: 5, name: 'Laptop Dell XPS 13', originalPrice: 1299, discountedPrice: 999, discount: 23, timeLeft: '4h', soldCount: 45, totalAvailable: 100, emoji: '💻', badge: 'Premium' },
-    { id: 6, name: 'Sony WH1000XM4', originalPrice: 349, discountedPrice: 249, discount: 28, timeLeft: '6h', soldCount: 312, totalAvailable: 400, emoji: '🎧', badge: 'Popular' },
-    { id: 7, name: 'Apple Watch Series 8', originalPrice: 399, discountedPrice: 299, discount: 25, timeLeft: '2.5h', soldCount: 178, totalAvailable: 250, emoji: '⌚', badge: 'Nuevo' },
-    { id: 8, name: 'GoPro Hero 11', originalPrice: 499, discountedPrice: 349, discount: 30, timeLeft: '3h', soldCount: 98, totalAvailable: 150, emoji: '📷', badge: 'Mejor' },
-  ];
+  const [deals, setDeals] = useState<Deal[]>([]);
+  const [loaded, setLoaded] = useState(false);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    fetch('/api/deals')
+      .then((res) => res.json())
+      .then((data: ApiProduct[]) => {
+        setDeals((Array.isArray(data) ? data : []).map(mapDeal));
+        setLoaded(true);
+      })
+      .catch(() => setLoaded(true));
+  }, []);
 
   const featured = deals.slice(0, 2);
   const restDeals = deals.slice(2);
+
+  if (loaded && deals.length === 0) {
+    return (
+      <main className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#071425] px-4 text-center">
+        <Flame size={40} className="text-red-400" />
+        <p className="text-3xl font-black text-white">{t('deals.emptyTitle')}</p>
+        <p className="text-white/55">{t('deals.emptyText')}</p>
+        <Link href="/explore" className="premium-cta">{t('deals.exploreProducts')}</Link>
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-[#071425]">
@@ -85,14 +132,14 @@ export default function Deals() {
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
               <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm text-red-300 mb-5">
                 <Flame size={14} className="text-red-400" />
-                Ofertas actualizadas cada hora
+                {t('deals.badge')}
               </div>
               <h1 className="text-5xl md:text-6xl font-bold text-white mb-3">
-                Ofertas
-                <span className="block text-red-400">Relampago</span>
+                {t('deals.titleLine1')}
+                <span className="block text-red-400">{t('deals.titleLine2')}</span>
               </h1>
               <p className="text-white/55 text-lg max-w-xl">
-                Descuentos increibles por tiempo limitado. Precios que nunca volveras a ver.
+                {t('deals.subtitle')}
               </p>
             </motion.div>
 
@@ -103,7 +150,7 @@ export default function Deals() {
               className="rounded-2xl border border-white/15 bg-[#0d1c31] p-5"
             >
               <p className="text-xs text-white/50 uppercase tracking-wide mb-3 flex items-center gap-2">
-                <Clock size={12} /> Proxima actualizacion en
+                <Clock size={12} /> {t('deals.nextUpdate')}
               </p>
               <Countdown seconds={3600} />
             </motion.div>
@@ -116,7 +163,7 @@ export default function Deals() {
         <div className="container mx-auto px-4 py-3">
           <p className="text-sm text-white/70 text-center">
             <Zap size={14} className="inline text-yellow-400 mr-2" />
-            <strong className="text-white">Consejo:</strong> Estas ofertas se actualizan cada hora. Activa notificaciones para no perderte tus productos favoritos.
+            <strong className="text-white">{t('deals.tip')}</strong> {t('deals.tipText')}
           </p>
         </div>
       </div>
@@ -139,19 +186,19 @@ export default function Deals() {
                     <div className="relative z-10 flex items-start justify-between gap-6">
                       <div className="flex-1">
                         <p className="inline-flex items-center rounded-full border border-red-500/35 bg-red-500/15 px-3 py-1 text-xs font-semibold text-red-200">
-                          Oferta destacada
+                          {t('deals.featuredBadge')}
                         </p>
                         <h2 className="mt-3 text-2xl font-black text-white">{deal.name}</h2>
                         <div className="mt-4 flex items-end gap-3">
                           <span className="text-4xl font-black text-red-400">${deal.discountedPrice.toFixed(2)}</span>
                           <span className="pb-1 text-base text-white/40 line-through">${deal.originalPrice.toFixed(2)}</span>
                         </div>
-                        <p className="mt-1 text-sm font-semibold text-primary">Ahorro total: ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}</p>
+                        <p className="mt-1 text-sm font-semibold text-primary">{t('deals.totalSavings')} ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}</p>
 
                         <div className="mt-5">
                           <div className="mb-2 flex justify-between text-xs text-white/55">
-                            <span>Disponibilidad</span>
-                            <span>{deal.soldCount}/{deal.totalAvailable} vendidos</span>
+                            <span>{t('deals.availability')}</span>
+                            <span>{deal.soldCount}/{deal.totalAvailable} {t('deals.sold')}</span>
                           </div>
                           <div className="h-2 rounded-full bg-white/10">
                             <motion.div
@@ -167,7 +214,7 @@ export default function Deals() {
                       <div className="flex flex-col items-end gap-3">
                         <div className="h-28 w-28 overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-2">
                           <SmartImage
-                            src={getDesignIllustration(`deal-featured-${deal.id}-${deal.name}`)}
+                            src={deal.imageUrl || getDesignIllustration(`deal-featured-${deal.id}-${deal.name}`)}
                             alt={deal.name}
                             width={112}
                             height={112}
@@ -175,7 +222,7 @@ export default function Deals() {
                           />
                         </div>
                         <div className="rounded-xl border border-white/15 bg-black/30 px-3 py-2 text-xs text-white/80">
-                          Termina en {deal.timeLeft}
+                          {t('deals.endsIn')} {deal.timeLeft}
                         </div>
                       </div>
                     </div>
@@ -207,7 +254,7 @@ export default function Deals() {
                         className="h-full w-full"
                       >
                         <SmartImage
-                          src={getDesignIllustration(`deal-${deal.id}-${deal.name}`)}
+                          src={deal.imageUrl || getDesignIllustration(`deal-${deal.id}-${deal.name}`)}
                           alt={deal.name}
                           fill
                           sizes="(max-width: 768px) 100vw, 33vw"
@@ -238,14 +285,14 @@ export default function Deals() {
                         <p className="text-white/35 text-xs line-through">${deal.originalPrice.toFixed(2)}</p>
                         <p className="text-2xl font-bold text-red-400">${deal.discountedPrice.toFixed(2)}</p>
                         <p className="text-xs text-primary font-semibold">
-                          Ahorras ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}
+                          {t('deals.savings')} ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}
                         </p>
                       </div>
 
                       {/* Progress */}
                       <div className="mb-4">
                         <div className="flex justify-between text-xs text-white/40 mb-1.5">
-                          <span>Vendidos</span>
+                          <span>{t('deals.sold')}</span>
                           <span>{deal.soldCount}/{deal.totalAvailable}</span>
                         </div>
                         <div className="w-full bg-white/10 rounded-full h-1.5">
@@ -259,7 +306,7 @@ export default function Deals() {
                       </div>
 
                       <button className="mt-auto w-full rounded-xl bg-red-500/20 border border-red-500/30 text-red-300 py-2.5 text-sm font-semibold group-hover:bg-red-500 group-hover:text-white group-hover:border-red-500 transition-all duration-300 flex items-center justify-center gap-2">
-                        <ShoppingCart size={14} /> Comprar Ahora
+                        <ShoppingCart size={14} /> {t('deals.buyNow')}
                       </button>
                     </div>
                   </div>
@@ -280,13 +327,13 @@ export default function Deals() {
           <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-orange-500/15 blur-3xl" />
           <div className="relative z-10">
             <h2 className="text-3xl font-bold text-white mb-3">
-              Nunca mas te pierdas una oferta
+              {t('deals.finalCtaTitle')}
             </h2>
             <p className="text-white/60 mb-7 max-w-md mx-auto">
-              Habilita notificaciones para recibir alertas de tus productos favoritos al precio mas bajo.
+              {t('deals.finalCtaText')}
             </p>
             <button className="inline-flex items-center gap-2 rounded-xl bg-red-500 px-8 py-3 font-semibold text-white transition hover:bg-red-600">
-              <Flame size={18} /> Habilitar Notificaciones
+              <Flame size={18} /> {t('deals.enableNotifications')}
             </button>
           </div>
         </motion.div>

@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Loader2, Sparkles } from 'lucide-react';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface LoadingScreenProps {
   title?: string;
@@ -10,10 +11,13 @@ interface LoadingScreenProps {
 }
 
 export default function LoadingScreen({
-  title = 'Cargando...',
-  subtitle = 'Preparando tu experiencia',
+  title,
+  subtitle,
   visible = true,
 }: LoadingScreenProps) {
+  const { t } = useLanguage();
+  const resolvedTitle = title ?? t('common.loading');
+  const resolvedSubtitle = subtitle ?? t('common.loadingSubtitle');
   return (
     <motion.div
       role="status"
@@ -59,8 +63,8 @@ export default function LoadingScreen({
           transition={{ duration: 0.35, delay: 0.08 }}
           className="mt-6"
         >
-          <p className="text-lg font-semibold text-white">{title}</p>
-          <p className="mt-2 text-sm text-white/70">{subtitle}</p>
+          <p className="text-lg font-semibold text-white">{resolvedTitle}</p>
+          <p className="mt-2 text-sm text-white/70">{resolvedSubtitle}</p>
         </motion.div>
 
         <div className="mt-8 flex items-center gap-2 text-primary">

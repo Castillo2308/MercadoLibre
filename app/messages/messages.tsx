@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SmartImage } from '@/components/ui/smart-image';
 import { getDesignAvatar } from '@/lib/design-api';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface Conversation {
   userId: string;
@@ -49,6 +50,7 @@ const getConversationStorageKey = (userId: string) => `kivra:last-chat:${userId}
 
 export default function Messages() {
   const { user, isAuthenticated, isAuthReady } = useAuth();
+  const { t, locale } = useLanguage();
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedUserId, setSelectedUserId] = useState<string>('');
@@ -64,12 +66,12 @@ export default function Messages() {
 
   const formatTime = (dateValue: Date | string) => {
     const date = new Date(dateValue);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(locale === 'en' ? 'en-US' : 'es-ES', { hour: '2-digit', minute: '2-digit' });
   };
 
   const formatConversationTime = (dateValue: Date | string) => {
     const date = new Date(dateValue);
-    return date.toLocaleString('es-ES', {
+    return date.toLocaleString(locale === 'en' ? 'en-US' : 'es-ES', {
       day: '2-digit',
       month: '2-digit',
       hour: '2-digit',
@@ -263,7 +265,7 @@ export default function Messages() {
       <div className="min-h-screen bg-[#071425]">
         <div className="container mx-auto px-4 py-16">
           <Card className="mx-auto max-w-2xl rounded-3xl border-white/10 bg-[#0c1d31]/90 p-10 text-center shadow-[0_18px_50px_rgba(0,0,0,0.35)]">
-            <p className="text-white/65">Cargando tu cuenta...</p>
+            <p className="text-white/65">{t('messages.loadingAccount')}</p>
           </Card>
         </div>
       </div>
@@ -278,9 +280,9 @@ export default function Messages() {
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-primary">
               <ShieldCheck size={26} />
             </div>
-            <h2 className="text-2xl font-black text-white">Inicia sesion para usar Mensajes</h2>
+            <h2 className="text-2xl font-black text-white">{t('messages.loginTitle')}</h2>
             <p className="mt-2 text-white/65">
-              La mensajeria guarda conversaciones reales en la base de datos y se vincula a tu cuenta activa.
+              {t('messages.loginSubtitle')}
             </p>
           </Card>
         </div>
@@ -301,31 +303,31 @@ export default function Messages() {
           >
             <div className="flex flex-wrap items-center gap-2">
               <span className="premium-chip">
-                <MessageSquare size={14} className="text-primary" /> Mensajería
+                <MessageSquare size={14} className="text-primary" /> {t('messages.badge')}
               </span>
               <span className="premium-chip">
-                <Sparkles size={14} className="text-secondary" /> Conectada a tu cuenta
+                <Sparkles size={14} className="text-secondary" /> {t('messages.badgeConnected')}
               </span>
               <span className="premium-chip">
-                <ShieldCheck size={14} className="text-primary" /> Historial persistente
+                <ShieldCheck size={14} className="text-primary" /> {t('messages.badgeHistory')}
               </span>
             </div>
             <div>
-              <h1 className="text-4xl font-black text-white md:text-5xl">Conversaciones en vivo</h1>
+              <h1 className="text-4xl font-black text-white md:text-5xl">{t('messages.heroTitle')}</h1>
               <p className="mt-2 max-w-2xl text-sm text-white/65">
-                Gestiona chats, crea nuevos contactos y continúa cualquier conversación desde la misma cuenta.
+                {t('messages.heroSubtitle')}
               </p>
             </div>
             <div className="grid gap-3 md:grid-cols-[1.2fr_0.8fr]">
               <div className="rounded-3xl border border-white/12 bg-white/6 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Cuenta activa</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/45">{t('messages.activeAccount')}</p>
                 <p className="mt-2 text-lg font-bold text-white">{accountLabel}</p>
                 <p className="text-sm text-white/58">{user.email}</p>
               </div>
               <div className="rounded-3xl border border-white/12 bg-white/6 p-4 backdrop-blur">
-                <p className="text-xs uppercase tracking-[0.18em] text-white/45">Estado</p>
-                <p className="mt-2 text-lg font-bold text-primary">{filteredConversations.length} conversaciones activas</p>
-                <p className="text-sm text-white/58">Actualización automática cada 5 segundos.</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/45">{t('messages.status')}</p>
+                <p className="mt-2 text-lg font-bold text-primary">{t('messages.activeConversations', { count: filteredConversations.length })}</p>
+                <p className="text-sm text-white/58">{t('messages.autoUpdate')}</p>
               </div>
             </div>
           </motion.div>
@@ -343,9 +345,9 @@ export default function Messages() {
             <div className="mb-4">
               <div className="flex items-center gap-2 text-white">
                 <Sparkles size={18} className="text-secondary" />
-                <h2 className="text-xl font-black">Mensajes</h2>
+                <h2 className="text-xl font-black">{t('messages.title')}</h2>
               </div>
-              <p className="text-xs text-white/55">{filteredConversations.length} conversaciones visibles</p>
+              <p className="text-xs text-white/55">{t('messages.visibleConversations', { count: filteredConversations.length })}</p>
             </div>
 
             <div className="relative mb-4">
@@ -353,30 +355,30 @@ export default function Messages() {
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar conversación..."
+                placeholder={t('messages.searchPlaceholder')}
                 className="w-full rounded-2xl border-white/15 bg-white/5 py-3 pl-9 pr-3 text-sm text-white placeholder:text-white/40"
               />
             </div>
 
             <Card className="rounded-2xl border-white/10 bg-white/5 p-4">
               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-white/60">
-                <UserPlus size={14} /> Nuevo chat
+                <UserPlus size={14} /> {t('messages.newChat')}
               </p>
               <div className="mt-3 space-y-3">
                 <Input
                   value={newRecipientEmail}
                   onChange={(e) => setNewRecipientEmail(e.target.value)}
-                  placeholder="Email del destinatario"
+                  placeholder={t('messages.recipientEmail')}
                   className="w-full rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
                 <Input
                   value={newRecipientName}
                   onChange={(e) => setNewRecipientName(e.target.value)}
-                  placeholder="Nombre de referencia (opcional)"
+                  placeholder={t('messages.recipientName')}
                   className="w-full rounded-xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
                 <p className="text-[11px] leading-relaxed text-white/48">
-                  El email es el identificador real para iniciar el chat. El nombre solo ayuda a tener contexto visual.
+                  {t('messages.emailHint')}
                 </p>
               </div>
             </Card>
@@ -384,12 +386,12 @@ export default function Messages() {
             <ScrollArea className="mt-4 max-h-[560px] pr-1">
               <div className="space-y-3">
                 {loadingConversations && (
-                  <p className="p-3 text-xs text-white/50">Cargando conversaciones...</p>
+                  <p className="p-3 text-xs text-white/50">{t('messages.loadingConversations')}</p>
                 )}
 
                 {!loadingConversations && filteredConversations.length === 0 && (
                   <Card className="rounded-2xl border-white/10 bg-white/5 p-4 text-center text-xs text-white/60">
-                    No hay conversaciones todavia.
+                    {t('messages.noConversations')}
                   </Card>
                 )}
 
@@ -455,10 +457,10 @@ export default function Messages() {
                 />
                 <div className="min-w-0 flex-1">
                   <h3 className="truncate text-lg font-bold text-white">
-                    {selectedConversation?.name || newRecipientName || 'Selecciona una conversación'}
+                    {selectedConversation?.name || newRecipientName || t('messages.selectConversation')}
                   </h3>
                   <p className="truncate text-xs text-white/55">
-                    {selectedConversation?.email || newRecipientEmail || 'Sin destinatario'}
+                    {selectedConversation?.email || newRecipientEmail || t('messages.noRecipient')}
                   </p>
                 </div>
                 <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/45 md:block">
@@ -471,7 +473,7 @@ export default function Messages() {
               <div className="space-y-5">
                 {messages.length === 0 && (
                   <Card className="rounded-2xl border-white/10 bg-white/5 p-6 text-center text-sm text-white/60">
-                    Todavía no hay mensajes en esta conversación.
+                    {t('messages.noMessages')}
                   </Card>
                 )}
 
@@ -486,7 +488,7 @@ export default function Messages() {
                       <div
                         className={`max-w-[82%] rounded-[1.4rem] px-4 py-3 text-sm shadow-lg md:max-w-[64%] ${
                           message.isOwn
-                            ? 'rounded-br-md bg-gradient-to-r from-primary to-secondary text-[#071425]'
+                            ? 'rounded-br-md bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#071425]'
                             : 'rounded-bl-md border border-white/10 bg-white/10 text-white'
                         }`}
                       >
@@ -505,11 +507,11 @@ export default function Messages() {
               <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] text-white/45">
                 <span className="premium-chip">
                   <ShieldCheck size={12} className="text-primary" />
-                  Vinculado a tu sesión
+                  {t('messages.linkedToSession')}
                 </span>
                 <span className="premium-chip">
                   <Sparkles size={12} className="text-secondary" />
-                  Espaciado más amplio
+                  {t('messages.widerSpacing')}
                 </span>
               </div>
               <div className="flex gap-2">
@@ -519,7 +521,7 @@ export default function Messages() {
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleSendMessage();
                   }}
-                  placeholder="Escribe tu mensaje..."
+                  placeholder={t('messages.typePlaceholder')}
                   className="flex-1 rounded-2xl border-white/15 bg-white/5 text-sm text-white placeholder:text-white/40"
                 />
                 <Button

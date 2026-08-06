@@ -24,14 +24,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   });
 
   useEffect(() => {
+    // El script inline en layout.tsx ya aplico el tema guardado (o 'dark' por
+    // defecto) al <html> antes de la hidratacion, evitando parpadeos. Aqui
+    // solo sincronizamos el estado de React con lo que ya quedo en el DOM;
+    // NO reevaluamos prefers-color-scheme para no pisar esa decision inicial
+    // con un valor distinto (eso causaba un "flash" de tema justo al cargar).
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
     if (savedTheme === 'dark' || savedTheme === 'light') {
       setThemeState(savedTheme);
       return;
     }
 
-    const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
-    setThemeState(prefersDark ? 'dark' : 'dark');
+    setThemeState(document.documentElement.dataset.theme === 'light' ? 'light' : 'dark');
   }, []);
 
   useEffect(() => {

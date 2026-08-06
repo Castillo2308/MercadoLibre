@@ -12,7 +12,10 @@ interface NavigationLoaderContextValue {
 
 const NavigationLoaderContext = createContext<NavigationLoaderContextValue | undefined>(undefined);
 
-const NAVIGATION_LOADING_MIN_DURATION = 180;
+// Solo mostramos el overlay de carga si la navegación tarda más de esto.
+// Para navegaciones instantáneas (la mayoría, gracias al prefetch de Next.js)
+// no se muestra ningún loader, evitando el "flash" en cada clic.
+const NAVIGATION_LOADING_SHOW_DELAY = 220;
 
 function isModifiedClick(event: MouseEvent) {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;
@@ -49,40 +52,24 @@ export function NavigationLoaderProvider({ children }: { children: ReactNode }) 
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
-  const loadingStartedAt = useRef<number | null>(null);
   const loadingTimerRef = useRef<number | null>(null);
   const currentRouteRef = useRef('');
 
   const stopLoading = useCallback(() => {
-    const finish = () => {
-      setIsLoading(false);
-      loadingStartedAt.current = null;
-    };
-
-    const startedAt = loadingStartedAt.current;
-    if (!startedAt) {
-      finish();
-      return;
-    }
-
-    const elapsed = Date.now() - startedAt;
-    if (elapsed >= NAVIGATION_LOADING_MIN_DURATION) {
-      finish();
-      return;
-    }
-
     if (loadingTimerRef.current) {
       window.clearTimeout(loadingTimerRef.current);
+      loadingTimerRef.current = null;
     }
-
-    loadingTimerRef.current = window.setTimeout(() => {
-      finish();
-    }, NAVIGATION_LOADING_MIN_DURATION - elapsed);
+    setIsLoading(false);
   }, []);
 
   const startLoading = useCallback(() => {
-    loadingStartedAt.current = Date.now();
-    setIsLoading(true);
+    if (loadingTimerRef.current) {
+      window.clearTimeout(loadingTimerRef.current);
+    }
+    loadingTimerRef.current = window.setTimeout(() => {
+      setIsLoading(true);
+    }, NAVIGATION_LOADING_SHOW_DELAY);
   }, []);
 
   useEffect(() => {

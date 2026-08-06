@@ -34,15 +34,16 @@ import { useRouter } from 'next/navigation';
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useNavigationLoader } from './NavigationLoaderProvider';
 import Logo from '@/Imagenes/Logo.png';
 
 const mainLinks = [
-  { href: '/explore', label: 'Explorar' },
-  { href: '/deals', label: 'Ofertas' },
-  { href: '/sell', label: 'Vender' },
+  { href: '/explore', key: 'nav.explore' as const },
+  { href: '/deals', key: 'nav.deals' as const },
+  { href: '/sell', key: 'nav.sell' as const },
 ];
 
 const productMegaMenu = [
@@ -84,6 +85,7 @@ function NavbarComponent() {
   const { getTotalItems, clearCart } = useShoppingCart();
   const { wishlist } = useWishlist();
   const { theme, toggleTheme } = useTheme();
+  const { locale, toggleLocale, t } = useLanguage();
   const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -144,7 +146,7 @@ function NavbarComponent() {
           aria-hidden="true"
           animate={{ opacity: [0.22, 0.42, 0.22], x: [0, -12, 0] }}
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-secondary/10 blur-3xl"
+          className="pointer-events-none absolute right-0 top-0 h-24 w-24 rounded-full bg-blue-400/15 dark:bg-secondary/10 blur-3xl"
         />
         <div className="container mx-auto px-4">
           <div className="flex h-24 items-center justify-between gap-4">
@@ -159,7 +161,7 @@ function NavbarComponent() {
                   priority
                 />
                 <div className="relative leading-tight">
-                  <p className="font-outfit text-[2.35rem] font-extrabold tracking-[-0.08em] bg-gradient-to-r from-white via-white to-primary bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-[-0.1em] sm:text-[2.55rem]">
+                  <p className="font-outfit text-[2.35rem] font-extrabold tracking-[-0.08em] bg-gradient-to-r from-[#0b1b2f] via-[#0b1b2f] to-primary dark:from-white dark:via-white dark:to-primary bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-[-0.1em] sm:text-[2.55rem]">
                     Kivra
                   </p>
                   <p className="mt-1 text-[0.68rem] font-semibold uppercase tracking-[0.38em] text-white/45 transition-colors duration-300 group-hover:text-primary/80">
@@ -180,7 +182,7 @@ function NavbarComponent() {
                     className="inline-flex items-center gap-1 rounded-full border border-white/10 px-4 py-2.5 font-outfit text-sm font-semibold tracking-[0.04em] text-white/80 transition hover:border-white/20 hover:bg-white/10 hover:text-white"
                     type="button"
                   >
-                    Productos
+                    {t('nav.products')}
                     <ChevronDown size={15} className={`transition-transform duration-300 ${isProductsOpen ? 'rotate-180' : ''}`} />
                   </motion.button>
 
@@ -272,7 +274,7 @@ function NavbarComponent() {
                     href={item.href}
                     className="group relative rounded-full px-4 py-2 font-outfit text-sm font-semibold tracking-[0.04em] text-white/78 transition hover:-translate-y-0.5 hover:text-white"
                   >
-                    <span className="relative z-10">{item.label}</span>
+                    <span className="relative z-10">{t(item.key)}</span>
                     <span className="absolute inset-x-3 bottom-1 h-px origin-left scale-x-0 bg-gradient-to-r from-primary to-secondary transition-transform duration-300 group-hover:scale-x-100" />
                   </Link>
                 ))}
@@ -310,14 +312,14 @@ function NavbarComponent() {
                       ref={searchInputRef}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Buscar productos"
+                      placeholder={t('nav.search.placeholder')}
                       className="min-w-0 flex-1 bg-transparent text-sm text-white placeholder:text-white/50 focus:outline-none"
                     />
                     <button
                       type="submit"
                       className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-xs font-semibold text-[#071425] transition hover:scale-[1.03] hover:brightness-110"
                     >
-                      Buscar
+                      {t('nav.search.button')}
                     </button>
                     <button
                       type="button"
@@ -340,37 +342,51 @@ function NavbarComponent() {
                 whileHover={{ y: -1, scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
                 type="button"
+                onClick={toggleLocale}
+                className="relative flex h-11 min-w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 px-3 text-xs font-bold tracking-wide transition hover:bg-white/20"
+                aria-label={t('nav.language')}
+                title={t('nav.language')}
+              >
+                {locale.toUpperCase()}
+              </motion.button>
+
+              <motion.button
+                whileHover={{ y: -1, scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                type="button"
                 onClick={toggleTheme}
                 className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20"
-                aria-label={theme === 'light' ? 'Cambiar a modo oscuro' : 'Cambiar a modo claro'}
+                aria-label={theme === 'light' ? t('nav.darkMode') : t('nav.lightMode')}
               >
                 {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
               </motion.button>
 
               {isAuthenticated ? (
-                <motion.div whileHover={{ y: -1, scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <motion.div whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href="/profile"
-                  className="relative mr-1 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-gradient-to-br from-primary to-secondary font-bold text-[#071425] shadow-[0_8px_20px_rgba(29,184,73,0.35)]"
-                  aria-label="Mi perfil"
+                  className="relative mr-1 flex h-11 items-center gap-2 rounded-full border border-white/20 bg-gradient-to-br from-primary to-primary-dark dark:to-secondary pl-1 pr-4 font-bold text-[#071425] shadow-[0_8px_20px_rgba(29,184,73,0.35)]"
+                  aria-label={t('nav.account')}
                 >
-                  {userInitial}
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/25">{userInitial}</span>
+                  <span className="hidden font-outfit text-sm tracking-[0.02em] xl:inline">{t('nav.account')}</span>
                 </Link>
                 </motion.div>
               ) : (
-                <motion.div whileHover={{ y: -1, scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                <motion.div whileHover={{ y: -1, scale: 1.02 }} whileTap={{ scale: 0.97 }}>
                 <Link
                   href="/auth/login"
-                  className="relative mr-1 flex h-11 w-11 items-center justify-center rounded-full border border-primary/40 bg-primary/20 text-primary transition hover:bg-primary/30"
-                  aria-label="Ir a perfil"
+                  className="relative mr-1 flex h-11 items-center gap-2 rounded-full border border-primary/40 bg-primary/20 pl-3 pr-4 text-primary transition hover:bg-primary/30"
+                  aria-label={t('nav.account')}
                 >
                   <User size={18} />
+                  <span className="hidden font-outfit text-sm font-semibold tracking-[0.02em] xl:inline">{t('nav.account')}</span>
                 </Link>
                 </motion.div>
               )}
 
               <motion.div whileHover={{ y: -1, scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/favorites" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label="Favoritos">
+              <Link href="/favorites" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label={t('nav.favorites')}>
                 <Heart size={18} />
                 {wishlist.length > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-[#071425]">
@@ -381,13 +397,13 @@ function NavbarComponent() {
               </motion.div>
 
               <motion.div whileHover={{ y: -1, scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/messages" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label="Mensajes">
+              <Link href="/messages" className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label={t('nav.messages')}>
                 <MessageSquare size={18} />
               </Link>
               </motion.div>
 
               <motion.div whileHover={{ y: -1, scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-              <Link href="/cart" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label="Carrito">
+              <Link href="/cart" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-white/20" aria-label={t('nav.cart')}>
                 <ShoppingCart size={18} />
                 {cartCount > 0 && (
                   <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-secondary px-1 text-[10px] font-bold text-white">
@@ -405,7 +421,7 @@ function NavbarComponent() {
                     type="button"
                     onClick={handleLogout}
                     className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 transition hover:bg-red-500/20"
-                    aria-label="Cerrar sesion"
+                    aria-label={t('nav.logout')}
                   >
                     <LogOut size={18} />
                   </motion.button>
@@ -413,7 +429,7 @@ function NavbarComponent() {
               ) : (
                 <Link href="/auth/login" className="ml-2 inline-flex items-center gap-2 rounded-full border border-primary/45 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] px-6 py-3 font-outfit text-sm font-semibold tracking-[0.05em] text-[#052012] shadow-[0_12px_28px_rgba(29,184,73,0.45)] ring-1 ring-primary/30 backdrop-blur transition hover:scale-[1.02] hover:brightness-110 hover:shadow-[0_16px_34px_rgba(29,184,73,0.55)]">
                   <Sparkles size={14} />
-                  Comienza gratis
+                  {t('nav.signup')}
                 </Link>
               )}
             </div>
@@ -447,19 +463,29 @@ function NavbarComponent() {
                 className="md:hidden pb-4"
               >
                 <div className="rounded-[1.75rem] border border-white/15 bg-[#0b1b2f]/95 p-4 text-white shadow-[0_24px_60px_rgba(0,0,0,0.34)]">
-                  <div className="mb-3 flex items-center justify-between rounded-2xl border border-white/12 bg-white/8 px-3 py-2">
+                  <div className="mb-3 flex items-center justify-between gap-2 rounded-2xl border border-white/12 bg-white/8 px-3 py-2">
                     <div>
-                      <p className="font-outfit text-xs font-semibold uppercase tracking-[0.24em] text-white/55">Apariencia</p>
-                      <p className="font-outfit text-sm font-semibold text-white">{theme === 'light' ? 'Modo claro' : 'Modo oscuro'}</p>
+                      <p className="font-outfit text-xs font-semibold uppercase tracking-[0.24em] text-white/55">{t('nav.appearance')}</p>
+                      <p className="font-outfit text-sm font-semibold text-white">{theme === 'light' ? t('nav.lightMode') : t('nav.darkMode')}</p>
                     </div>
-                    <button
-                      type="button"
-                      onClick={toggleTheme}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
-                      aria-label="Cambiar tema"
-                    >
-                      {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={toggleLocale}
+                        className="inline-flex h-10 min-w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 px-2.5 text-xs font-bold text-white transition hover:bg-white/20"
+                        aria-label={t('nav.language')}
+                      >
+                        {locale.toUpperCase()}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={toggleTheme}
+                        className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white transition hover:bg-white/20"
+                        aria-label={t('nav.appearance')}
+                      >
+                        {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-3 py-2.5">
@@ -468,19 +494,19 @@ function NavbarComponent() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={handleSearchKeyDown}
-                      placeholder="Buscar..."
+                      placeholder={t('nav.search.mobilePlaceholder')}
                       className="w-full bg-transparent font-outfit text-sm text-white placeholder:text-white/60 focus:outline-none"
                     />
                   </div>
 
                   <div className="mt-4 grid gap-2 text-sm">
-                    <Link href="/categories" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Categorías</Link>
-                    <Link href="/deals" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Ofertas</Link>
-                    <Link href="/sell" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Vender</Link>
-                    <Link href="/favorites" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Favoritos</Link>
-                    <Link href="/messages" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Mensajes</Link>
-                    <Link href="/cart" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Carrito</Link>
-                    <Link href="/profile" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">Perfil</Link>
+                    <Link href="/categories" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.categories')}</Link>
+                    <Link href="/deals" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.deals')}</Link>
+                    <Link href="/sell" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.sell')}</Link>
+                    <Link href="/favorites" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.favorites')}</Link>
+                    <Link href="/messages" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.messages')}</Link>
+                    <Link href="/cart" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.cart')}</Link>
+                    <Link href="/profile" className="rounded-2xl border border-white/10 px-3 py-2.5 font-outfit transition hover:-translate-y-0.5 hover:bg-white/10">{t('nav.profile')}</Link>
                   </div>
 
                   <div className="mt-4 border-t border-white/15 pt-3">
@@ -490,14 +516,14 @@ function NavbarComponent() {
                         onClick={handleLogout}
                         className="w-full rounded-2xl border border-red-400/30 bg-red-500/20 px-3 py-2.5 font-outfit text-sm font-semibold text-red-200 transition hover:bg-red-500/30"
                       >
-                        Cerrar sesion
+                        {t('nav.logout')}
                       </button>
                     ) : (
                       <Link
                         href="/auth/login"
                         className="inline-flex w-full items-center justify-center rounded-2xl bg-white px-3 py-2.5 font-outfit text-sm font-semibold text-[#071425] transition hover:scale-[1.01]"
                       >
-                        Iniciar sesion
+                        {t('nav.login')}
                       </Link>
                     )}
                   </div>

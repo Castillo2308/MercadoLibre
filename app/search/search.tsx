@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ApiProduct = {
   id: string;
@@ -40,6 +41,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
   const [filteredProducts, setFilteredProducts] = useState<ApiProduct[]>([]);
   const [allFetched, setAllFetched] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     let cancelled = false;
@@ -97,13 +99,13 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(29,184,73,0.1),transparent_50%),radial-gradient(circle_at_80%_30%,rgba(37,99,235,0.1),transparent_45%)]" />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">Busqueda</h1>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">{t('search.title')}</h1>
             <p className="text-white/50 text-lg">
               {qParam && filteredProducts.length > 0
-                ? `${filteredProducts.length} resultados para: "${qParam}"`
+                ? t('search.resultsFor', { count: filteredProducts.length, query: qParam })
                 : qParam
-                  ? `Sin resultados para: "${qParam}"`
-                  : `${filteredProducts.length} productos disponibles`}
+                  ? t('search.noResultsFor', { query: qParam })
+                  : t('search.productsAvailable', { count: filteredProducts.length })}
             </p>
           </motion.div>
         </div>
@@ -116,7 +118,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
             <div className="rounded-2xl border border-white/10 bg-[#0d1c31] p-5 sticky top-24">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-white flex items-center gap-2">
-                  <SlidersHorizontal size={18} className="text-primary" /> Filtros
+                  <SlidersHorizontal size={18} className="text-primary" /> {t('search.filters')}
                 </h3>
                 <button
                   onClick={() => setShowFilters(!showFilters)}
@@ -129,14 +131,14 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
               <div className={`space-y-5 ${showFilters ? 'block' : 'hidden lg:block'}`}>
                 {/* Price */}
                 <div className="pb-5 border-b border-white/10">
-                  <h4 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wide">Precio</h4>
+                  <h4 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wide">{t('search.price')}</h4>
                   <div className="space-y-2">
                     {[
-                      { value: 'all', label: 'Todos los precios' },
+                      { value: 'all', label: t('search.allPrices') },
                       { value: '0-100', label: '$0 - $100' },
                       { value: '100-500', label: '$100 - $500' },
                       { value: '500-1000', label: '$500 - $1,000' },
-                      { value: '1000', label: 'Mas de $1,000' },
+                      { value: '1000', label: t('search.moreThan1000') },
                     ].map((opt) => (
                       <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
                         <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all ${priceRange === opt.value ? 'border-primary bg-primary' : 'border-white/30 group-hover:border-primary/60'}`}>
@@ -154,9 +156,9 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                 {/* Condition */}
                 <div className="pb-5 border-b border-white/10">
                   <h4 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wide flex items-center gap-2">
-                    <Zap size={12} className="text-yellow-400" /> Estado
+                    <Zap size={12} className="text-yellow-400" /> {t('search.condition')}
                   </h4>
-                  {['Nuevo', 'Como Nuevo', 'Usado'].map((c, idx) => (
+                  {[t('search.new'), t('search.likeNew'), t('search.used')].map((c, idx) => (
                     <label key={c} className="flex items-center gap-3 mb-2.5 cursor-pointer group">
                       <input type="checkbox" defaultChecked={idx === 0} className="w-4 h-4 accent-primary cursor-pointer" />
                       <span className="text-sm text-white/50 group-hover:text-white/80 transition-colors">{c}</span>
@@ -166,7 +168,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
 
                 {/* Rating */}
                 <div>
-                  <h4 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wide">Calificacion</h4>
+                  <h4 className="text-sm font-semibold text-white/70 mb-3 uppercase tracking-wide">{t('search.rating')}</h4>
                   {[5, 4, 3].map((stars) => (
                     <label key={stars} className="flex items-center gap-3 mb-2.5 cursor-pointer group">
                       <input type="checkbox" className="w-4 h-4 accent-primary cursor-pointer" />
@@ -189,18 +191,18 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
           <div className="lg:col-span-3">
             {/* Sort Bar */}
             <div className="mb-6 flex justify-between items-center rounded-xl border border-white/10 bg-[#0d1c31] p-3 px-4">
-              <p className="text-white/50 text-sm">{filteredProducts.length} productos encontrados</p>
+              <p className="text-white/50 text-sm">{t('search.productsFound', { count: filteredProducts.length })}</p>
               <div className="relative">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
                   className="appearance-none bg-white/10 border border-white/15 text-white text-sm rounded-lg px-4 py-2 pr-8 focus:outline-none focus:border-primary cursor-pointer"
                 >
-                  <option value="relevance" className="bg-[#0d1c31]">Relevancia</option>
-                  <option value="price-asc" className="bg-[#0d1c31]">Menor precio</option>
-                  <option value="price-desc" className="bg-[#0d1c31]">Mayor precio</option>
-                  <option value="rating" className="bg-[#0d1c31]">Mejor calificacion</option>
-                  <option value="newest" className="bg-[#0d1c31]">Mas nuevo</option>
+                  <option value="relevance" className="bg-[#0d1c31]">{t('search.sortRelevance')}</option>
+                  <option value="price-asc" className="bg-[#0d1c31]">{t('search.sortPriceAsc')}</option>
+                  <option value="price-desc" className="bg-[#0d1c31]">{t('search.sortPriceDesc')}</option>
+                  <option value="rating" className="bg-[#0d1c31]">{t('search.sortRating')}</option>
+                  <option value="newest" className="bg-[#0d1c31]">{t('search.sortNewest')}</option>
                 </select>
                 <ChevronDown size={14} className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-white/50" />
               </div>
@@ -256,7 +258,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                             </div>
 
                             <p className="text-xs text-white/40 mb-3 flex items-center gap-1">
-                              <Shield size={11} className="text-primary" /> {product.seller ? `${product.seller.firstName || ''} ${product.seller.lastName || ''}` : 'Vendedor'}
+                              <Shield size={11} className="text-primary" /> {product.seller ? `${product.seller.firstName || ''} ${product.seller.lastName || ''}` : t('common.seller')}
                             </p>
 
                             <div className="mt-auto">
@@ -264,7 +266,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                             </div>
 
                             <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 py-1.5 text-xs text-primary font-semibold text-center">
-                              Envio Gratis
+                              {t('common.freeShipping')}
                             </div>
                           </div>
                         </div>
@@ -280,8 +282,8 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                 className="text-center py-20 rounded-2xl border border-white/10 bg-[#0d1c31]"
               >
                 <div className="text-6xl mb-4">🔍</div>
-                <h3 className="text-2xl font-bold text-white mb-2">Sin resultados</h3>
-                <p className="text-white/50">Intenta con una busqueda diferente o ajusta los filtros</p>
+                <h3 className="text-2xl font-bold text-white mb-2">{t('search.noResultsTitle')}</h3>
+                <p className="text-white/50">{t('search.noResultsText')}</p>
               </motion.div>
             )}
           </div>

@@ -2,67 +2,120 @@
 
 /**
  * profile.tsx
- * 
- * Página de perfil del usuario.
- * Muestra:
- * - Información personal
- * - Historial de órdenes
- * - Estadísticas de compras
- * - Métodos de pago
- * - Direcciones guardadas
- * - Configuración de cuenta
+ *
+ * Página de perfil del usuario. Muestra información real de la cuenta,
+ * los productos que realmente publicó como vendedor, sus compras reales
+ * (órdenes) y configuración básica. Sin datos inventados.
  */
 
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BarChart3,
-  CheckCircle2,
-  CreditCard,
-  Edit2,
-  LogOut,
   Mail,
-  MapPin,
   Package,
-  Receipt,
   Phone,
   Settings,
   Moon,
-  Star,
-  Truck,
-  TrendingUp,
   Sun,
   User,
+  LogOut,
+  ShoppingBag,
+  Heart,
+  ShoppingCart,
+  PlusCircle,
+  MessageCircle,
+  BarChart3,
+  TrendingUp,
+  DollarSign,
 } from 'lucide-react';
-import { useMemo, useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
+import { useWishlist } from '@/hooks/useWishlist';
+import { SmartImage } from '@/components/ui/smart-image';
+import { MiniBarChart, MiniDonutChart } from '@/components/ui/charts';
 import { useRouter } from 'next/navigation';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useLanguage } from '@/context/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
+
+interface MyProduct {
+  id: string;
+  title: string;
+  price: string | number;
+  quantityAvailable: number;
+  quantitySold: number;
+  isActive: boolean;
+  mainImageUrl: string | null;
+  images: { imageUrl: string }[];
+}
+
+interface MyOrder {
+  id: string;
+  orderNumber: string;
+  status: string;
+  totalAmount: string | number;
+  createdAt: string;
+  items: { id: string; product: { title: string } }[];
+}
+
+const ORDER_STATUS_KEYS: Record<string, TranslationKey> = {
+  pending: 'profile.orderStatus.pending',
+  confirmed: 'profile.orderStatus.confirmed',
+  shipped: 'profile.orderStatus.shipped',
+  delivered: 'profile.orderStatus.delivered',
+  cancelled: 'profile.orderStatus.cancelled',
+};
 
 export default function Profile() {
+  return (
+    <ProtectedRoute>
+      <ProfileContent />
+    </ProtectedRoute>
+  );
+}
+
+function ProfileContent() {
   const [activeTab, setActiveTab] = useState('overview');
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { t, locale } = useLanguage();
   const { startLoading } = useNavigationLoader();
-  const { clearCart } = useShoppingCart();
+  const { clearCart, getTotalItems } = useShoppingCart();
+  const { wishlist } = useWishlist();
   const router = useRouter();
   const isLightTheme = theme === 'light';
 
+  const [myProducts, setMyProducts] = useState<MyProduct[]>([]);
+  const [productsLoaded, setProductsLoaded] = useState(false);
+  const [myOrders, setMyOrders] = useState<MyOrder[]>([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/products?sellerId=${user.id}&take=50`)
+      .then((res) => res.json())
+      .then((data: MyProduct[]) => setMyProducts(Array.isArray(data) ? data : []))
+      .catch(() => setMyProducts([]))
+      .finally(() => setProductsLoaded(true));
+
+    fetch('/api/users/orders', { headers: { 'X-User-ID': user.id }, cache: 'no-store' })
+      .then((res) => res.json())
+      .then((payload) => setMyOrders(Array.isArray(payload.data) ? payload.data : []))
+      .catch(() => setMyOrders([]))
+      .finally(() => setOrdersLoaded(true));
+  }, [user?.id]);
+
   const userInfo = useMemo(() => {
-    const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : 'Usuario';
+    const fullName = user ? `${user.firstName} ${user.lastName}`.trim() : t('profile.defaultName');
     return {
-      name: fullName || 'Usuario',
+      name: fullName || t('profile.defaultName'),
       email: user?.email || 'sin-correo@kivra.com',
-      phone: user?.phone || 'Sin telefono',
-      location: 'San José, Costa Rica',
-      joinDate: '15 de enero de 2023',
-      rating: 4.8,
-      reviews: 156,
-      totalSales: 1250,
-      totalPurchases: 3420,
+      phone: user?.phone || t('profile.noPhone'),
     };
-  }, [user]);
+  }, [user, t]);
 
   const initials = useMemo(() => {
     const parts = userInfo.name.split(' ').filter(Boolean);
@@ -71,99 +124,97 @@ export default function Profile() {
     return `${first}${second}`.toUpperCase();
   }, [userInfo.name]);
 
+  const inventoryValue = useMemo(
+    () => myProducts.reduce((sum, p) => sum + Number(p.price) * p.quantityAvailable, 0),
+    [myProducts]
+  );
+
   const tabs = [
-    { id: 'overview', label: 'Resumen', icon: User },
-    { id: 'purchases', label: 'Mis Compras', icon: Package },
-    { id: 'sales', label: 'Mis Ventas', icon: TrendingUp },
-    { id: 'settings', label: 'Configuracion', icon: Settings },
+    { id: 'overview', label: t('profile.tab.overview'), icon: User },
+    { id: 'sales', label: t('profile.tab.sales'), icon: ShoppingBag },
+    { id: 'purchases', label: t('profile.tab.purchases'), icon: Package },
+    { id: 'stats', label: t('profile.tab.stats'), icon: BarChart3 },
+    { id: 'settings', label: t('profile.tab.settings'), icon: Settings },
   ];
 
-  const weeklySales = [
-    { day: 'Lun', value: 840 },
-    { day: 'Mar', value: 1260 },
-    { day: 'Mie', value: 980 },
-    { day: 'Jue', value: 1590 },
-    { day: 'Vie', value: 1750 },
-    { day: 'Sab', value: 1320 },
-    { day: 'Dom', value: 940 },
-  ];
+  const PALETTE = ['#1DB849', '#3B82F6', '#F59E0B', '#EC4899', '#8B5CF6', '#FF6B6B'];
 
-  const categorySales = [
-    { category: 'Tecnologia', value: 48, amount: 600 },
-    { category: 'Gaming', value: 24, amount: 300 },
-    { category: 'Audio', value: 16, amount: 200 },
-    { category: 'Hogar', value: 12, amount: 150 },
-  ];
+  const totalSpent = useMemo(
+    () => myOrders.reduce((sum, order) => sum + Number(order.totalAmount), 0),
+    [myOrders]
+  );
 
-  const topProducts = [
-    { name: 'Laptop Pro 14', sold: 23, revenue: 13800 },
-    { name: 'Headphones Elite', sold: 18, revenue: 3600 },
-    { name: 'Camera 4K', sold: 11, revenue: 8800 },
-  ];
+  const avgOrderValue = myOrders.length > 0 ? totalSpent / myOrders.length : 0;
 
-  const purchaseStats = [
-    { label: 'Total invertido', value: '$3,420', icon: CreditCard, extra: '+12% mensual' },
-    { label: 'Pedidos entregados', value: '41', icon: CheckCircle2, extra: '95% exito' },
-    { label: 'En transito', value: '6', icon: Truck, extra: 'ETA 2.3 dias' },
-  ];
+  const spendingByMonth = useMemo(() => {
+    const buckets = new Map<string, number>();
+    myOrders.forEach((order) => {
+      const date = new Date(order.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { month: 'short', year: '2-digit' });
+      buckets.set(key, (buckets.get(key) || 0) + Number(order.totalAmount));
+    });
+    return Array.from(buckets.entries())
+      .slice(-6)
+      .map(([label, value]) => ({ label, value }));
+  }, [myOrders, locale]);
 
-  const [monthlyPurchases, setMonthlyPurchases] = useState(() => [
-    { month: 'Ene', value: 0 },
-    { month: 'Feb', value: 0 },
-    { month: 'Mar', value: 0 },
-    { month: 'Abr', value: 0 },
-    { month: 'May', value: 0 },
-    { month: 'Jun', value: 0 },
-  ]);
+  const ordersByStatus = useMemo(() => {
+    const buckets = new Map<string, number>();
+    myOrders.forEach((order) => {
+      const statusKey = ORDER_STATUS_KEYS[order.status];
+      const key = statusKey ? t(statusKey) : order.status;
+      buckets.set(key, (buckets.get(key) || 0) + 1);
+    });
+    return Array.from(buckets.entries()).map(([label, value], idx) => ({
+      label,
+      value,
+      color: PALETTE[idx % PALETTE.length],
+    }));
+  }, [myOrders, t]);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (!user?.id) return;
-      try {
-        const res = await fetch('/api/users/orders', { headers: { 'X-User-ID': user.id }, cache: 'no-store' });
-        if (!res.ok) return;
-        const payload = await res.json();
-        const orders = payload.data || [];
+  const topSellingProducts = useMemo(
+    () =>
+      [...myProducts]
+        .sort((a, b) => b.quantitySold - a.quantitySold)
+        .slice(0, 5)
+        .map((p) => ({ label: p.title, value: p.quantitySold })),
+    [myProducts]
+  );
 
-        // Simple aggregation by month (last 6 months placeholder)
-        const months = ['Ene','Feb','Mar','Abr','May','Jun'];
-        const counts = months.map((m) => ({ month: m, value: 0 }));
+  const inventoryByProduct = useMemo(
+    () =>
+      [...myProducts]
+        .sort((a, b) => Number(b.price) * b.quantityAvailable - Number(a.price) * a.quantityAvailable)
+        .slice(0, 5)
+        .map((p, idx) => ({
+          label: p.title,
+          value: Number(p.price) * p.quantityAvailable,
+          color: PALETTE[idx % PALETTE.length],
+        })),
+    [myProducts]
+  );
 
-        for (const o of orders) {
-          const d = new Date(o.createdAt || o.createdAt);
-          const mIndex = d.getMonth();
-          if (mIndex >= 0 && mIndex < counts.length) counts[mIndex].value += 1;
-        }
-
-        setMonthlyPurchases(counts);
-      } catch (e) {
-        console.error('Failed to fetch user orders for profile', e);
-      }
-    };
-    void fetchOrders();
-  }, [user?.id]);
-
-  const purchaseCategories = [
-    { name: 'Tecnologia', value: 46 },
-    { name: 'Hogar', value: 26 },
-    { name: 'Moda', value: 18 },
-    { name: 'Gaming', value: 10 },
-  ];
-
-  const recentPurchases = [
-    { title: 'Laptop Pro 14', price: 1299, status: 'Entregado' },
-    { title: 'Headphones Elite', price: 199, status: 'En camino' },
-    { title: 'Smart Speaker', price: 159, status: 'Preparando envio' },
-  ];
-
-  const maxWeeklySale = Math.max(...weeklySales.map((item) => item.value));
-  const maxMonthlyPurchase = Math.max(...monthlyPurchases.map((item) => item.value));
+  const activeVsInactive = useMemo(() => {
+    const active = myProducts.filter((p) => p.isActive).length;
+    const inactive = myProducts.length - active;
+    return [
+      { label: t('profile.chartActive'), value: active, color: '#1DB849' },
+      { label: t('profile.chartInactive'), value: inactive, color: '#64748B' },
+    ];
+  }, [myProducts, t]);
 
   const panelAnimation = {
     initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
     transition: { duration: 0.45 },
   };
+
+  const overviewStats = [
+    { label: t('profile.statPublished'), value: myProducts.length, icon: ShoppingBag },
+    { label: t('profile.statFavorites'), value: wishlist.length, icon: Heart },
+    { label: t('profile.statInCart'), value: getTotalItems(), icon: ShoppingCart },
+  ];
 
   return (
     <main className="min-h-screen bg-[#071425] pb-16">
@@ -177,27 +228,15 @@ export default function Profile() {
             className="relative z-10 flex flex-col gap-6 md:flex-row md:items-end"
           >
             <div className="flex items-end gap-5">
-              <motion.div
-                animate={{ y: [0, -5, 0] }}
-                transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white/20 bg-gradient-to-br from-primary to-secondary text-4xl font-black text-gray-900 shadow-[0_18px_42px_rgba(0,0,0,0.45)] md:h-32 md:w-32 md:text-5xl"
-              >
+              <div className="flex h-28 w-28 items-center justify-center rounded-full border-4 border-white/20 bg-gradient-to-br from-primary to-primary-dark dark:to-secondary text-4xl font-black text-gray-900 shadow-[0_18px_42px_rgba(0,0,0,0.45)] md:h-32 md:w-32 md:text-5xl">
                 {initials}
-              </motion.div>
+              </div>
               <div className="pb-1">
                 <h1 className="mb-2 text-3xl font-black text-white md:text-4xl">{userInfo.name}</h1>
-                <p className="mb-2 flex items-center gap-2 text-sm text-white/75">
-                  <MapPin size={16} />
-                  {userInfo.location}
+                <p className="flex items-center gap-2 text-sm text-white/70">
+                  <Mail size={15} /> {userInfo.email}
                 </p>
-                <p className="text-sm text-white/65">Miembro desde {userInfo.joinDate}</p>
               </div>
-            </div>
-            <div className="md:ml-auto">
-              <button className="btn btn-outline flex items-center gap-2">
-                <Edit2 size={18} />
-                Editar Perfil
-              </button>
             </div>
           </motion.div>
 
@@ -207,12 +246,9 @@ export default function Profile() {
             transition={{ duration: 0.5, delay: 0.1 }}
             className="relative z-10 mt-7 grid grid-cols-1 gap-4 md:grid-cols-3"
           >
-            {[
-              { label: 'Compras', value: userInfo.totalPurchases },
-              { label: 'Ventas', value: userInfo.totalSales },
-              { label: 'Calificacion', value: `${userInfo.rating}⭐` },
-            ].map((stat) => (
-              <div key={stat.label} className="card-elevated animate-floatCard p-4 text-center" style={{ animationDelay: `${stat.label.length * 0.04}s` }}>
+            {overviewStats.map((stat) => (
+              <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
+                <stat.icon size={18} className="mx-auto mb-1 text-primary" />
                 <p className="mb-1 text-sm font-semibold text-white/70">{stat.label}</p>
                 <p className="text-3xl font-black text-primary">{stat.value}</p>
               </div>
@@ -224,48 +260,34 @@ export default function Profile() {
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <div className="card-elevated p-6 mb-6 sticky top-24">
-              <div className="mb-6 border-b border-white/10 pb-6 text-center">
-                <div className="mb-2 flex justify-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      size={18}
-                      className={i < Math.floor(userInfo.rating) ? 'fill-primary text-primary' : 'text-white/25'}
-                    />
-                  ))}
-                </div>
-                <p className="text-lg font-black text-white">{userInfo.rating}</p>
-                <p className="text-xs text-white/65">{userInfo.reviews} opiniones</p>
-              </div>
-
+            <div className="sticky top-24 rounded-2xl border border-white/10 bg-[#0d1c31] p-6">
               <div className="mb-6 space-y-4 border-b border-white/10 pb-6">
                 <div className="flex items-center gap-3 text-white/80">
-                  <Mail size={18} className="text-secondary flex-shrink-0" />
+                  <Mail size={18} className="flex-shrink-0 text-secondary" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-white/60">Email</p>
+                    <p className="text-xs text-white/60">{t('profile.email')}</p>
                     <p className="truncate text-sm font-semibold">{userInfo.email}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-white/80">
-                  <Phone size={18} className="text-secondary flex-shrink-0" />
+                  <Phone size={18} className="flex-shrink-0 text-secondary" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-white/60">Telefono</p>
+                    <p className="text-xs text-white/60">{t('profile.phone')}</p>
                     <p className="text-sm font-semibold">{userInfo.phone}</p>
                   </div>
                 </div>
               </div>
 
-              <nav className="space-y-2 mb-6">
+              <nav className="mb-6 space-y-2">
                 {tabs.map((tab) => {
                   const Icon = tab.icon;
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`w-full flex items-center gap-3 rounded-lg px-4 py-3 font-semibold transition-all duration-300 ${
+                      className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 font-semibold transition-all duration-300 ${
                         activeTab === tab.id
-                          ? 'scale-[1.02] bg-gradient-to-r from-primary to-primary-dark text-gray-900 shadow-lg'
+                          ? 'bg-gradient-to-r from-primary to-primary-dark text-gray-900 shadow-lg'
                           : 'text-white/80 hover:bg-white/10 hover:text-white'
                       }`}
                     >
@@ -283,10 +305,10 @@ export default function Profile() {
                   clearCart();
                   router.push('/');
                 }}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-accent text-accent rounded-lg hover:bg-accent/10 transition-all font-semibold"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-accent px-4 py-3 font-semibold text-accent transition-all hover:bg-accent/10"
               >
                 <LogOut size={20} />
-                Cerrar Sesion
+                {t('profile.logout')}
               </button>
             </div>
           </div>
@@ -295,19 +317,16 @@ export default function Profile() {
             <AnimatePresence mode="wait">
               {activeTab === 'overview' && (
                 <motion.div key="overview" className="space-y-6" {...panelAnimation}>
-                  <div className="card-elevated p-8">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
                     <h3 className="mb-6 flex items-center gap-2 text-2xl font-black text-white">
                       <User size={24} className="text-secondary" />
-                      Informacion Personal
+                      {t('profile.personalInfo')}
                     </h3>
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                       {[
-                        { label: 'Nombre Completo', value: userInfo.name },
-                        { label: 'Correo Electronico', value: userInfo.email },
-                        { label: 'Telefono', value: userInfo.phone },
-                        { label: 'Ubicacion', value: userInfo.location },
-                        { label: 'Miembro desde', value: userInfo.joinDate },
-                        { label: 'Estado', value: 'Verificado' },
+                        { label: t('profile.fullName'), value: userInfo.name },
+                        { label: t('profile.emailField'), value: userInfo.email },
+                        { label: t('profile.phone'), value: userInfo.phone },
                       ].map((item) => (
                         <div key={item.label} className="rounded-lg border border-white/10 bg-white/5 p-4">
                           <p className="mb-2 text-xs font-semibold text-white/60">{item.label}</p>
@@ -317,257 +336,218 @@ export default function Profile() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-                    {[
-                      { icon: '🛍️', title: 'Total Comprado', value: `$${userInfo.totalPurchases}` },
-                      { icon: '💰', title: 'Total Vendido', value: `$${userInfo.totalSales}` },
-                      { icon: '⭐', title: 'Reputacion', value: '4.8 / 5' },
-                    ].map((stat) => (
-                      <motion.div
-                        key={stat.title}
-                        whileHover={{ y: -4, scale: 1.01 }}
-                        className="card-elevated p-6"
-                      >
-                        <div className="mb-3 text-4xl">{stat.icon}</div>
-                        <p className="mb-2 text-sm font-semibold text-white/70">{stat.title}</p>
-                        <p className="text-3xl font-black text-primary">{stat.value}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-
-              {activeTab === 'purchases' && (
-                <motion.div key="purchases" className="space-y-6" {...panelAnimation}>
-                  <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-2xl font-black text-white">
-                      <Package size={24} className="text-secondary" />
-                      Mis Compras con Analitica
-                    </h3>
-                    <p className="text-sm text-white/70">Resumen visual de tus compras, categorias y actividad reciente.</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {purchaseStats.map((item, idx) => {
-                      const Icon = item.icon;
-                      return (
-                        <motion.div
-                          key={item.label}
-                          initial={{ opacity: 0, y: 12 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.35, delay: idx * 0.08 }}
-                          className="card-elevated p-5"
-                        >
-                          <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-primary">
-                            <Icon size={18} />
-                          </div>
-                          <p className="text-sm text-white/65">{item.label}</p>
-                          <p className="mt-1 text-3xl font-black text-primary">{item.value}</p>
-                          <p className="mt-2 inline-flex rounded-full bg-secondary/20 px-2.5 py-1 text-xs font-semibold text-secondary">
-                            {item.extra}
-                          </p>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-
-                  <div className="card-elevated p-6">
-                    <p className="mb-5 text-lg font-bold text-white">Evolucion de compras (grafico de barras)</p>
-                    <div className="flex h-64 items-end justify-between gap-3 rounded-xl border border-white/10 bg-[#0b182b]/80 p-4">
-                      {monthlyPurchases.map((item, idx) => {
-                        const height = Math.max((item.value / maxMonthlyPurchase) * 100, 15);
-                        return (
-                          <div key={item.month} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: `${height}%`, opacity: 1 }}
-                              transition={{ duration: 0.55, delay: idx * 0.08 }}
-                              className="w-full rounded-t-xl bg-gradient-to-t from-primary/80 via-secondary to-primary"
-                            />
-                            <p className="text-xs font-semibold text-white/65">{item.month}</p>
-                            <p className="text-xs text-white/50">${item.value}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                    <div className="card-elevated p-6">
-                      <p className="mb-5 text-lg font-bold text-white">Distribucion por categoria</p>
-                      <div className="space-y-4">
-                        {purchaseCategories.map((item, idx) => (
-                          <div key={item.name}>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                              <span className="font-semibold text-white/80">{item.name}</span>
-                              <span className="text-white/65">{item.value}%</span>
-                            </div>
-                            <div className="h-2.5 rounded-full bg-white/10">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${item.value}%` }}
-                                transition={{ duration: 0.6, delay: idx * 0.08 }}
-                                className="h-full rounded-full bg-gradient-to-r from-secondary to-primary"
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="card-elevated p-6">
-                      <p className="mb-5 text-lg font-bold text-white">Compras recientes</p>
-                      <div className="space-y-4">
-                        {recentPurchases.map((purchase, idx) => (
-                          <motion.div
-                            key={purchase.title}
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.4, delay: idx * 0.08 }}
-                            className="rounded-xl border border-white/10 bg-white/5 p-4"
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Receipt size={16} className="text-secondary" />
-                                <p className="font-semibold text-white">{purchase.title}</p>
-                              </div>
-                              <span className="text-sm font-semibold text-primary">${purchase.price}</span>
-                            </div>
-                            <span className="inline-flex rounded-full bg-white/10 px-2.5 py-1 text-xs text-white/75">
-                              {purchase.status}
-                            </span>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </div>
+                  <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6 text-center">
+                    <p className="text-white/70">
+                      {t('profile.sellCta')}
+                    </p>
+                    <Link href="/sell" className="premium-cta mt-4 inline-flex">
+                      <PlusCircle size={18} /> {t('profile.publishProduct')}
+                    </Link>
                   </div>
                 </motion.div>
               )}
 
               {activeTab === 'sales' && (
                 <motion.div key="sales" className="space-y-6" {...panelAnimation}>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="flex items-center gap-2 text-2xl font-black text-white">
+                        <ShoppingBag size={24} className="text-secondary" />
+                        {t('profile.mySales')}
+                      </h3>
+                      <p className="text-sm text-white/60">{t('profile.mySalesSubtitle')}</p>
+                    </div>
+                    <Link href="/sell" className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-bold text-[#052012] transition hover:brightness-105">
+                      <PlusCircle size={16} /> {t('profile.publish')}
+                    </Link>
+                  </div>
+
+                  {!productsLoaded ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center text-white/50">{t('profile.loading')}</div>
+                  ) : myProducts.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-16 text-center">
+                      <ShoppingBag size={36} className="mx-auto mb-3 text-white/25" />
+                      <p className="mb-4 text-white/60">{t('profile.noProductsYet')}</p>
+                      <Link href="/sell" className="premium-cta inline-flex">{t('profile.startSelling')}</Link>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <p className="text-xs text-white/50">{t('profile.products')}</p>
+                          <p className="text-2xl font-black text-white">{myProducts.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <p className="text-xs text-white/50">{t('profile.unitsSold')}</p>
+                          <p className="text-2xl font-black text-white">{myProducts.reduce((s, p) => s + p.quantitySold, 0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                          <p className="text-xs text-white/50">{t('profile.inventoryValue')}</p>
+                          <p className="text-2xl font-black text-primary">${inventoryValue.toFixed(0)}</p>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                        {myProducts.map((product) => {
+                          const image = product.images?.[0]?.imageUrl || product.mainImageUrl;
+                          return (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.id}`}
+                              className="group overflow-hidden rounded-2xl border border-white/10 bg-white/5 transition hover:border-white/20"
+                            >
+                              <div className="relative h-32 overflow-hidden bg-white/5">
+                                {image && (
+                                  <SmartImage src={image} alt={product.title} fill sizes="300px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                                )}
+                                <span className={`absolute left-2 top-2 rounded-full px-2 py-0.5 text-[10px] font-bold ${product.isActive ? 'bg-primary text-[#052012]' : 'bg-white/20 text-white'}`}>
+                                  {product.isActive ? t('profile.active') : t('profile.inactive')}
+                                </span>
+                              </div>
+                              <div className="p-3">
+                                <p className="truncate text-sm font-semibold text-white">{product.title}</p>
+                                <div className="mt-1 flex items-center justify-between text-xs text-white/50">
+                                  <span>${Number(product.price).toFixed(2)}</span>
+                                  <span>{product.quantityAvailable} {t('profile.inStock')}</span>
+                                </div>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'purchases' && (
+                <motion.div key="purchases" className="space-y-6" {...panelAnimation}>
                   <div>
-                    <h3 className="mb-2 flex items-center gap-2 text-2xl font-black text-white">
-                      <BarChart3 size={24} className="text-secondary" />
-                      Mis Ventas con Analitica
+                    <h3 className="flex items-center gap-2 text-2xl font-black text-white">
+                      <Package size={24} className="text-secondary" />
+                      {t('profile.myPurchases')}
                     </h3>
-                    <p className="text-sm text-white/70">
-                      Dashboard semanal con barras, rendimiento por categoria y productos top.
+                    <p className="text-sm text-white/60">{t('profile.myPurchasesSubtitle')}</p>
+                  </div>
+
+                  {!ordersLoaded ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center text-white/50">{t('profile.loading')}</div>
+                  ) : myOrders.length === 0 ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-8 py-16 text-center">
+                      <Package size={36} className="mx-auto mb-3 text-white/25" />
+                      <p className="mb-2 text-white/60">{t('profile.noPurchasesYet')}</p>
+                      <p className="mb-4 text-sm text-white/40">{t('profile.noPurchasesHint')}</p>
+                      <div className="flex flex-wrap items-center justify-center gap-3">
+                        <Link href="/" className="premium-cta inline-flex">{t('profile.exploreProducts')}</Link>
+                        <Link href="/messages" className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-5 py-3 font-semibold text-white/80 transition hover:bg-white/10">
+                          <MessageCircle size={16} /> {t('profile.viewMessages')}
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {myOrders.map((order) => (
+                        <div key={order.id} className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                              <p className="font-bold text-white">{t('profile.order', { number: order.orderNumber })}</p>
+                              <p className="text-xs text-white/45">{new Date(order.createdAt).toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES')} · {t('profile.productsCount', { count: order.items.length })}</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
+                                {ORDER_STATUS_KEYS[order.status] ? t(ORDER_STATUS_KEYS[order.status]) : order.status}
+                              </span>
+                              <span className="text-lg font-black text-primary">${Number(order.totalAmount).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === 'stats' && (
+                <motion.div key="stats" className="space-y-6" {...panelAnimation}>
+                  <div>
+                    <h3 className="flex items-center gap-2 text-2xl font-black text-white">
+                      <BarChart3 size={24} className="text-secondary" />
+                      {t('profile.statistics')}
+                    </h3>
+                    <p className="text-sm text-white/60">
+                      {t('profile.statisticsSubtitle')}
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                    {[
-                      { label: 'Facturacion semanal', value: '$8,680', extra: '+18%' },
-                      { label: 'Pedidos cerrados', value: '52', extra: '+9%' },
-                      { label: 'Ticket promedio', value: '$166', extra: '+4%' },
-                    ].map((kpi, idx) => (
-                      <motion.div
-                        key={kpi.label}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: idx * 0.08 }}
-                        className="card-elevated p-5"
-                      >
-                        <p className="text-sm text-white/65">{kpi.label}</p>
-                        <p className="mt-1 text-3xl font-black text-primary">{kpi.value}</p>
-                        <p className="mt-2 inline-flex rounded-full bg-secondary/20 px-2.5 py-1 text-xs font-semibold text-secondary">
-                          {kpi.extra} vs semana pasada
-                        </p>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="card-elevated p-6">
-                    <p className="mb-5 text-lg font-bold text-white">Ventas por dia (grafico de barras)</p>
-                    <div className="flex h-64 items-end justify-between gap-3 rounded-xl border border-white/10 bg-[#0b182b]/80 p-4">
-                      {weeklySales.map((item, idx) => {
-                        const height = Math.max((item.value / maxWeeklySale) * 100, 12);
-                        return (
-                          <div key={item.day} className="flex h-full flex-1 flex-col items-center justify-end gap-2">
-                            <motion.div
-                              initial={{ height: 0, opacity: 0 }}
-                              animate={{ height: `${height}%`, opacity: 1 }}
-                              transition={{ duration: 0.55, delay: 0.08 * idx }}
-                              className="w-full rounded-t-xl bg-gradient-to-t from-secondary via-primary to-primary shadow-[0_8px_20px_rgba(29,184,73,0.28)]"
-                            />
-                            <p className="text-xs font-semibold text-white/65">{item.day}</p>
-                            <p className="text-xs text-white/50">${item.value}</p>
-                          </div>
-                        );
-                      })}
+                  {!productsLoaded || !ordersLoaded ? (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center text-white/50">
+                      {t('profile.loadingMetrics')}
                     </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-                    <div className="card-elevated p-6">
-                      <p className="mb-5 text-lg font-bold text-white">Participacion por categoria</p>
-                      <div className="space-y-4">
-                        {categorySales.map((item, idx) => (
-                          <div key={item.category}>
-                            <div className="mb-2 flex items-center justify-between text-sm">
-                              <span className="font-semibold text-white/80">{item.category}</span>
-                              <span className="text-white/65">{item.value}%</span>
-                            </div>
-                            <div className="h-2.5 rounded-full bg-white/10">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${item.value}%` }}
-                                transition={{ duration: 0.65, delay: idx * 0.08 }}
-                                className="h-full rounded-full bg-gradient-to-r from-secondary to-primary"
-                              />
-                            </div>
-                            <p className="mt-1 text-xs text-white/50">{item.amount} ordenes</p>
-                          </div>
-                        ))}
+                  ) : (
+                    <>
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <DollarSign size={16} className="mb-1 text-primary" />
+                          <p className="text-xs text-white/50">{t('profile.totalSpent')}</p>
+                          <p className="text-2xl font-black text-white">${totalSpent.toFixed(0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <TrendingUp size={16} className="mb-1 text-secondary" />
+                          <p className="text-xs text-white/50">{t('profile.avgTicket')}</p>
+                          <p className="text-2xl font-black text-white">${avgOrderValue.toFixed(0)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                          <ShoppingBag size={16} className="mb-1 text-primary" />
+                          <p className="text-xs text-white/50">{t('profile.totalOrders')}</p>
+                          <p className="text-2xl font-black text-white">{myOrders.length}</p>
+                        </div>
+                        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                          <Package size={16} className="mb-1 text-primary" />
+                          <p className="text-xs text-white/50">{t('profile.inventoryValueShort')}</p>
+                          <p className="text-2xl font-black text-primary">${inventoryValue.toFixed(0)}</p>
+                        </div>
                       </div>
-                    </div>
 
-                    <div className="card-elevated p-6">
-                      <p className="mb-5 text-lg font-bold text-white">Top productos vendidos</p>
-                      <div className="space-y-4">
-                        {topProducts.map((product, idx) => (
-                          <motion.div
-                            key={product.name}
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.4, delay: idx * 0.08 }}
-                            className="rounded-xl border border-white/10 bg-white/5 p-4"
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <p className="font-semibold text-white">{product.name}</p>
-                              <span className="text-sm text-primary">${product.revenue}</span>
-                            </div>
-                            <p className="text-xs text-white/60">{product.sold} unidades vendidas</p>
-                            <div className="mt-3 h-1.5 rounded-full bg-white/10">
-                              <motion.div
-                                initial={{ width: 0 }}
-                                animate={{ width: `${Math.min((product.sold / 25) * 100, 100)}%` }}
-                                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                                className="h-full rounded-full bg-gradient-to-r from-primary to-secondary"
-                              />
-                            </div>
-                          </motion.div>
-                        ))}
+                      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.spendingByMonth')}</p>
+                          <MiniBarChart data={spendingByMonth} valuePrefix="$" color="#3B82F6" emptyLabel={t('profile.noSpendingData')} />
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.ordersByStatus')}</p>
+                          <MiniDonutChart data={ordersByStatus} emptyLabel={t('profile.noOrdersData')} />
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.topSellingProducts')}</p>
+                          <MiniBarChart data={topSellingProducts} color="#1DB849" emptyLabel={t('profile.noSalesData')} />
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.inventoryByProduct')}</p>
+                          <MiniDonutChart data={inventoryByProduct} emptyLabel={t('profile.noInventoryData')} />
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 xl:col-span-2">
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.activeVsInactive')}</p>
+                          <MiniDonutChart data={activeVsInactive} emptyLabel={t('profile.noPublishedData')} />
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </motion.div>
               )}
 
               {activeTab === 'settings' && (
                 <motion.div key="settings" className="space-y-6" {...panelAnimation}>
-                  <div className="card-elevated p-8">
+                  <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
                     <h3 className="mb-6 flex items-center gap-2 text-2xl font-black text-white">
                       <Settings size={24} className="text-secondary" />
-                      Configuracion de Cuenta
+                      {t('profile.accountSettings')}
                     </h3>
 
-                    <div className="mb-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                         <div>
-                          <p className="text-lg font-bold text-white">Apariencia</p>
-                          <p className="text-sm text-white/65">Cambia entre un modo oscuro y uno claro, ambos con el mismo estilo moderno.</p>
+                          <p className="text-lg font-bold text-white">{t('profile.appearance')}</p>
+                          <p className="text-sm text-white/65">{t('profile.appearanceSubtitle')}</p>
                         </div>
 
                         <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-1 shadow-[0_10px_22px_rgba(0,0,0,0.18)]">
@@ -575,73 +555,22 @@ export default function Profile() {
                             type="button"
                             onClick={() => setTheme('dark')}
                             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                              !isLightTheme
-                                ? 'bg-primary text-[#071425] shadow-[0_8px_18px_rgba(29,184,73,0.28)]'
-                                : 'text-white/65 hover:text-white'
+                              !isLightTheme ? 'bg-primary text-[#071425] shadow-[0_8px_18px_rgba(29,184,73,0.28)]' : 'text-white/65 hover:text-white'
                             }`}
                           >
-                            <Moon size={16} />
-                            Oscuro
+                            <Moon size={16} /> {t('profile.dark')}
                           </button>
                           <button
                             type="button"
                             onClick={() => setTheme('light')}
                             className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
-                              isLightTheme
-                                ? 'bg-white text-[#071425] shadow-[0_8px_18px_rgba(255,255,255,0.18)]'
-                                : 'text-white/65 hover:text-white'
+                              isLightTheme ? 'bg-white text-[#071425] shadow-[0_8px_18px_rgba(255,255,255,0.18)]' : 'text-white/65 hover:text-white'
                             }`}
                           >
-                            <Sun size={16} />
-                            Claro
+                            <Sun size={16} /> {t('profile.light')}
                           </button>
                         </div>
                       </div>
-                    </div>
-
-                    {[
-                      {
-                        title: 'Privacidad',
-                        items: [
-                          { label: 'Perfil Publico', enabled: true },
-                          { label: 'Mostrar Calificacion', enabled: true },
-                          { label: 'Recibir Mensajes', enabled: false },
-                        ],
-                      },
-                      {
-                        title: 'Notificaciones',
-                        items: [
-                          { label: 'Email de Compras', enabled: true },
-                          { label: 'Email de Mensajes', enabled: true },
-                          { label: 'Email de Ofertas', enabled: false },
-                        ],
-                      },
-                    ].map((group) => (
-                      <div key={group.title} className="border-b border-white/10 pb-6">
-                        <h4 className="mb-4 text-lg font-bold text-white">{group.title}</h4>
-                        <div className="space-y-3">
-                          {group.items.map((item) => (
-                            <label
-                              key={item.label}
-                              className="flex cursor-pointer items-center gap-3 rounded-lg p-3 transition-colors hover:bg-white/5"
-                            >
-                              <input
-                                type="checkbox"
-                                defaultChecked={item.enabled}
-                                className="h-5 w-5 cursor-pointer rounded text-secondary"
-                              />
-                              <span className="font-semibold text-white/80">{item.label}</span>
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-
-                    <div className="mt-6 pt-6">
-                      <h4 className="mb-4 text-lg font-bold text-accent">Zona de Peligro</h4>
-                      <button className="w-full rounded-lg border-2 border-accent px-6 py-3 font-semibold text-accent transition-all hover:bg-accent/10">
-                        Eliminar Cuenta
-                      </button>
                     </div>
                   </div>
                 </motion.div>

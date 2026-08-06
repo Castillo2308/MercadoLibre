@@ -30,20 +30,40 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
+import { useLanguage } from '@/context/LanguageContext';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import { SmartImage } from '@/components/ui/smart-image';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { getDesignIllustration } from '@/lib/design-api';
 
+const PAYMENT_METHODS = [
+  {
+    id: 'sinpe' as const,
+    label: 'SINPE Movil',
+    description: 'Transferencia instantanea desde tu banco',
+    tag: 'Instantaneo',
+    icon: CreditCard,
+  },
+  {
+    id: 'cash' as const,
+    label: 'Efectivo',
+    description: 'Paga en el momento de la entrega',
+    tag: 'Contra entrega',
+    icon: Wallet,
+  },
+];
+
 function CartContent() {
   const { cart, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useShoppingCart();
   const { user } = useAuth();
+  const { t } = useLanguage();
   const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<'sinpe' | 'cash'>('sinpe');
@@ -98,7 +118,10 @@ function CartContent() {
         });
       }
 
+      toast.success('Solicitud enviada al vendedor');
       router.push(`/messages?user=${encodeURIComponent(sellerIds[0])}`);
+    } catch {
+      toast.error('No se pudo enviar la solicitud, intenta de nuevo');
     } finally {
       setIsProcessingCheckout(false);
     }
@@ -133,9 +156,9 @@ function CartContent() {
             </div>
 
             <div>
-              <h1 className="text-4xl font-black text-white md:text-5xl">Mi Carrito</h1>
+              <h1 className="text-4xl font-black text-white md:text-5xl">{t('cart.title')}</h1>
               <p className="mt-2 max-w-2xl text-sm text-white/68">
-                {getTotalItems()} producto{getTotalItems() !== 1 ? 's' : ''} listos para coordinar con el vendedor y cerrar la compra sin friccion.
+                {getTotalItems()} {getTotalItems() !== 1 ? t('common.products') : t('common.product')} {t('cart.subtitleSuffix')}
               </p>
             </div>
           </motion.div>
@@ -171,8 +194,8 @@ function CartContent() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_0.95fr]">
-          <div className="space-y-4">
+        <div className={cartItems.length > 0 ? 'grid grid-cols-1 gap-8 lg:grid-cols-[1.6fr_0.95fr]' : 'flex justify-center'}>
+          <div className={cartItems.length > 0 ? 'space-y-4' : 'w-full max-w-2xl space-y-4'}>
             {cartItems.length === 0 ? (
               <motion.div
                 initial={{ opacity: 0, y: 18, scale: 0.98 }}
@@ -180,6 +203,7 @@ function CartContent() {
                 transition={{ duration: 0.45 }}
                 className="surface-panel-strong relative overflow-hidden text-center"
               >
+                <div className="h-1 w-full bg-gradient-to-r from-primary via-[#ffd600] to-secondary" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(29,184,73,0.16),transparent_40%),radial-gradient(circle_at_80%_10%,rgba(255,214,0,0.18),transparent_45%),radial-gradient(circle_at_50%_90%,rgba(37,99,235,0.16),transparent_50%)]" />
                 <motion.div
                   animate={{ opacity: [0.22, 0.5, 0.22], scale: [1, 1.08, 1] }}
@@ -189,22 +213,29 @@ function CartContent() {
                 <motion.div
                   animate={{ opacity: [0.18, 0.42, 0.18], scale: [1, 1.1, 1] }}
                   transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }}
-                  className="pointer-events-none absolute -right-8 bottom-0 h-44 w-44 rounded-full bg-secondary/10 blur-3xl"
+                  className="pointer-events-none absolute -right-8 bottom-0 h-44 w-44 rounded-full bg-blue-400/15 dark:bg-secondary/10 blur-3xl"
                 />
                 <CardContent className="relative z-10 px-8 py-16 md:px-12">
-                  <motion.div
-                    animate={{ y: [0, -5, 0], scale: [1, 1.04, 1] }}
-                    transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
-                    className="mx-auto mb-5 flex h-18 w-18 items-center justify-center rounded-3xl border border-white/12 bg-white/10 text-primary shadow-[0_16px_34px_rgba(0,0,0,0.22)]"
-                  >
-                    <ShoppingCart size={30} />
-                  </motion.div>
-                  <p className="text-3xl font-black text-white md:text-4xl">Tu carrito está vacío</p>
+                  <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center">
+                    <motion.div
+                      animate={{ scale: [1, 1.35, 1], opacity: [0.35, 0, 0.35] }}
+                      transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+                      className="absolute inset-0 rounded-full bg-primary/25"
+                    />
+                    <motion.div
+                      animate={{ y: [0, -6, 0], scale: [1, 1.05, 1] }}
+                      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                      className="relative flex h-18 w-18 items-center justify-center rounded-3xl border border-white/15 bg-gradient-to-br from-primary/25 via-white/10 to-secondary/10 text-primary shadow-[0_16px_34px_rgba(29,184,73,0.22)]"
+                    >
+                      <ShoppingCart size={30} />
+                    </motion.div>
+                  </div>
+                  <p className="text-3xl font-black text-white md:text-4xl">{t('cart.empty.title')}</p>
                   <p className="mx-auto mt-3 max-w-lg text-white/65">
-                    Explora productos, guarda favoritos y vuelve cuando quieras. Todo lo que agregues aquí se conecta con tu cuenta.
+                    {t('cart.empty.subtitle')}
                   </p>
                   <div className="mt-7 flex flex-wrap items-center justify-center gap-2">
-                    {['Compra rápida', 'Chat con vendedor', 'Sin fricción'].map((label) => (
+                    {[t('cart.empty.quickBuy'), t('cart.empty.chatSeller'), t('cart.empty.noFriction')].map((label) => (
                       <span key={label} className="premium-chip bg-white/5">
                         <Sparkles size={12} className="text-primary" />
                         {label}
@@ -214,13 +245,13 @@ function CartContent() {
                   <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
                     <Button asChild className="premium-cta">
                       <Link href="/">
-                        Explorar productos
+                        {t('cart.exploreProducts')}
                         <ArrowRight size={18} />
                       </Link>
                     </Button>
                     <Button asChild variant="outline" className="border-white/15 bg-white/5 text-white/80 hover:bg-white/10">
                       <Link href="/deals">
-                        Ver ofertas
+                        {t('cart.viewDeals')}
                         <Zap size={16} className="ml-2" />
                       </Link>
                     </Button>
@@ -228,12 +259,14 @@ function CartContent() {
                 </CardContent>
               </motion.div>
             ) : (
-              <AnimatePresence>
+              <AnimatePresence mode="popLayout">
               {cartItems.map((item, idx) => (
                 <motion.div
                   key={item.id}
+                  layout
                   initial={{ opacity: 0, y: 14 }}
                   animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -24, scale: 0.96, transition: { duration: 0.25 } }}
                   transition={{ duration: 0.35, delay: idx * 0.05 }}
                   whileHover={{ y: -4 }}
                   className="surface-panel-strong group overflow-hidden p-4 md:p-5"
@@ -255,62 +288,89 @@ function CartContent() {
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="text-xl font-bold text-white transition-colors group-hover:text-primary">{item.name}</h3>
                           <span className="rounded-full border border-primary/25 bg-primary/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary">
-                            Disponible
+                            {t('cart.available')}
                           </span>
                         </div>
                         <p className="max-w-2xl text-sm text-white/60">
-                          Coordinacion por chat vinculada a tu cuenta. Puedes ajustar cantidades antes de enviar la solicitud.
+                          {t('cart.unitPrice')} <span className="font-semibold text-white/80">${item.price.toFixed(2)}</span> · {t('cart.chatCoordination')}
                         </p>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="inline-flex items-center rounded-2xl border border-white/10 bg-white/5 p-1.5">
-                          <button
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
                             onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/75 transition hover:bg-white/10 hover:text-primary"
-                            aria-label="Disminuir cantidad"
+                            disabled={item.quantity <= 1}
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/75 transition hover:bg-white/10 hover:text-primary disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+                            aria-label={t('cart.decreaseQty')}
                           >
                             <Minus size={16} />
-                          </button>
-                          <input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => updateQuantity(item.id, Math.max(1, parseInt(e.target.value) || 1))}
-                            className="w-14 border-0 bg-transparent text-center text-sm font-bold text-white focus:outline-none"
-                          />
-                          <button
+                          </motion.button>
+                          <div className="relative flex h-9 w-14 items-center justify-center overflow-hidden">
+                            <AnimatePresence mode="wait" initial={false}>
+                              <motion.span
+                                key={item.quantity}
+                                initial={{ y: 12, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -12, opacity: 0 }}
+                                transition={{ duration: 0.18 }}
+                                className="absolute text-sm font-bold text-white"
+                              >
+                                {item.quantity}
+                              </motion.span>
+                            </AnimatePresence>
+                          </div>
+                          <motion.button
+                            whileTap={{ scale: 0.88 }}
                             onClick={() => updateQuantity(item.id, item.quantity + 1)}
                             className="inline-flex h-9 w-9 items-center justify-center rounded-xl text-white/75 transition hover:bg-white/10 hover:text-primary"
-                            aria-label="Aumentar cantidad"
+                            aria-label={t('cart.increaseQty')}
                           >
                             <Plus size={16} />
-                          </button>
+                          </motion.button>
                         </div>
 
                         <div className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2">
-                          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Cantidad</p>
-                          <p className="text-sm font-semibold text-white">{item.quantity} unidad{item.quantity !== 1 ? 'es' : ''}</p>
+                          <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">{t('cart.quantity')}</p>
+                          <p className="text-sm font-semibold text-white">{item.quantity} {item.quantity !== 1 ? t('cart.units') : t('cart.unit')}</p>
                         </div>
                       </div>
                     </div>
 
                     <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-left md:min-w-[190px] md:text-right">
                       <div>
-                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">Total item</p>
-                        <p className="mt-1 text-3xl font-black text-primary">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-[10px] uppercase tracking-[0.18em] text-white/45">{t('cart.itemTotal')}</p>
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.p
+                            key={item.quantity}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -6 }}
+                            transition={{ duration: 0.18 }}
+                            className="mt-1 text-3xl font-black text-primary"
+                          >
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </motion.p>
+                        </AnimatePresence>
                         <p className="text-xs text-white/40 line-through">
                           ${(item.price * 1.2 * item.quantity).toFixed(2)}
                         </p>
                       </div>
 
                       <div className="flex md:justify-end">
-                        <button
-                          onClick={() => removeFromCart(item.id)}
+                        <motion.button
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            removeFromCart(item.id);
+                            toast.success(`${item.name} eliminado del carrito`);
+                          }}
                           className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 hover:text-white"
                         >
                           <Trash2 size={16} />
-                          Eliminar
-                        </button>
+                          {t('cart.remove')}
+                        </motion.button>
                       </div>
                     </div>
                   </div>
@@ -330,34 +390,34 @@ function CartContent() {
               >
                 <div className="h-1 w-full bg-gradient-to-r from-primary via-[#ffd600] to-secondary" />
                 <CardHeader className="space-y-2 border-b border-white/10 bg-white/[0.03]">
-                  <CardTitle className="text-2xl font-black text-white">Resumen de compra</CardTitle>
+                  <CardTitle className="text-2xl font-black text-white">{t('cart.summary')}</CardTitle>
                   <p className="text-sm text-white/55">Controla el total, el metodo de pago y la salida hacia mensajes.</p>
                 </CardHeader>
 
                 <CardContent className="space-y-6 p-5 md:p-6">
                   <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-white/60">Subtotal</span>
+                      <span className="text-white/60">{t('cart.subtotal')}</span>
                       <span className="text-lg font-bold text-white">${subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="flex items-center gap-2 text-white/60">
                         <Truck size={16} className="text-secondary" />
-                        Envío
+                        {t('cart.shipping')}
                       </span>
                       <span className={`text-lg font-bold ${shipping === 0 ? 'text-primary' : 'text-white'}`}>
-                        {shipping === 0 ? 'GRATIS' : `$${shipping.toFixed(2)}`}
+                        {shipping === 0 ? t('cart.free') : `$${shipping.toFixed(2)}`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-white/60">Impuestos (10%)</span>
+                      <span className="text-white/60">{t('cart.taxes')}</span>
                       <span className="text-lg font-bold text-white">${tax.toFixed(2)}</span>
                     </div>
                   </div>
 
                   <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/15 via-white/[0.06] to-secondary/15 p-5">
                     <div className="flex items-center justify-between gap-4">
-                      <span className="text-lg font-bold text-white">Total</span>
+                      <span className="text-lg font-bold text-white">{t('cart.total')}</span>
                       <span className="text-4xl font-black text-primary">${total.toFixed(2)}</span>
                     </div>
                     {shipping === 0 ? (
@@ -369,30 +429,57 @@ function CartContent() {
 
                   <div>
                     <div className="mb-3 flex items-center justify-between">
-                      <p className="text-sm font-semibold text-white">Metodo de pago</p>
+                      <p className="text-sm font-semibold text-white">{t('cart.paymentMethod')}</p>
                       <span className="text-xs text-white/45">Se usa en el mensaje al vendedor</span>
                     </div>
                     <RadioGroup
                       value={paymentMethod}
                       onValueChange={(value) => setPaymentMethod(value as 'sinpe' | 'cash')}
-                      className="space-y-3"
+                      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                     >
-                      <label className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 text-sm font-semibold transition ${paymentMethod === 'sinpe' ? 'border-primary/40 bg-primary/10 text-white shadow-[0_10px_24px_rgba(29,184,73,0.12)]' : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/8'}`}>
-                        <span className="flex items-center gap-3">
-                          <RadioGroupItem value="sinpe" id="pay-sinpe" className="border-white/30" />
-                          <CreditCard size={16} className="text-secondary" />
-                          SINPE Movil
-                        </span>
-                        <span className="text-xs text-white/50">Instantaneo</span>
-                      </label>
-                      <label className={`flex cursor-pointer items-center justify-between rounded-2xl border px-4 py-4 text-sm font-semibold transition ${paymentMethod === 'cash' ? 'border-primary/40 bg-primary/10 text-white shadow-[0_10px_24px_rgba(29,184,73,0.12)]' : 'border-white/10 bg-white/5 text-white/78 hover:border-white/20 hover:bg-white/8'}`}>
-                        <span className="flex items-center gap-3">
-                          <RadioGroupItem value="cash" id="pay-cash" className="border-white/30" />
-                          <Wallet size={16} className="text-secondary" />
-                          Efectivo
-                        </span>
-                        <span className="text-xs text-white/50">Contra entrega</span>
-                      </label>
+                      {PAYMENT_METHODS.map((method) => {
+                        const isActive = paymentMethod === method.id;
+                        const Icon = method.icon;
+                        return (
+                          <label
+                            key={method.id}
+                            htmlFor={`pay-${method.id}`}
+                            className={`group/pay relative flex cursor-pointer flex-col gap-3 overflow-hidden rounded-2xl border px-4 py-4 text-sm font-semibold transition-all duration-300 ${
+                              isActive
+                                ? 'border-primary/50 bg-primary/10 text-white shadow-[0_14px_30px_rgba(29,184,73,0.18)]'
+                                : 'border-white/10 bg-white/5 text-white/78 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/10'
+                            }`}
+                          >
+                            {isActive && (
+                              <motion.div
+                                layoutId="payment-method-highlight"
+                                className="pointer-events-none absolute inset-0 rounded-2xl border border-primary/40"
+                                transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                              />
+                            )}
+                            <div className="relative z-10 flex items-center justify-between gap-2">
+                              <span
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${
+                                  isActive
+                                    ? 'border-primary/40 bg-primary/20 text-primary'
+                                    : 'border-white/10 bg-white/10 text-white/70 group-hover/pay:text-white'
+                                }`}
+                              >
+                                <Icon size={18} />
+                              </span>
+                              <RadioGroupItem value={method.id} id={`pay-${method.id}`} className="border-white/30" />
+                            </div>
+                            <div className="relative z-10">
+                              <p className="text-base font-bold text-white">{method.label}</p>
+                              <p className="mt-0.5 text-xs font-normal leading-snug text-white/55">{method.description}</p>
+                            </div>
+                            <span className="relative z-10 inline-flex w-fit items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-white/60">
+                              {isActive && <ShieldCheck size={11} className="text-primary" />}
+                              {method.tag}
+                            </span>
+                          </label>
+                        );
+                      })}
                     </RadioGroup>
                   </div>
 
@@ -401,13 +488,13 @@ function CartContent() {
                     disabled={isProcessingCheckout}
                     className="premium-cta w-full"
                   >
-                    <span>{isProcessingCheckout ? 'Enviando solicitud...' : 'Proceder a la compra'}</span>
+                    <span>{isProcessingCheckout ? t('cart.processing') : t('cart.proceed')}</span>
                     <ArrowRight size={20} />
                   </Button>
 
                   <Button asChild variant="outline" className="w-full border-white/15 bg-white/5 text-white/80 hover:bg-white/10">
                     <Link href="/">
-                      Continuar comprando
+                      {t('cart.continueShopping')}
                       <ArrowRight size={18} className="ml-2" />
                     </Link>
                   </Button>

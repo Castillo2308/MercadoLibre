@@ -24,6 +24,7 @@ import { useNavigationLoader } from "@/components/NavigationLoaderProvider";
 import { useRouter } from "next/navigation";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ApiProduct = {
   id: string;
@@ -44,6 +45,7 @@ export default function ExplorePage() {
   const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const { toggleWishlist, isInWishlist } = useWishlist();
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchAllProducts = async () => {
@@ -90,8 +92,8 @@ export default function ExplorePage() {
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(29,184,73,0.1),transparent_50%),radial-gradient(circle_at_80%_30%,rgba(37,99,235,0.1),transparent_45%)]" />
         <div className="container mx-auto px-4 relative z-10">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">Explora Todo</h1>
-            <p className="text-white/50 text-lg">{products.length} productos disponibles en todas las categorías</p>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">{t('explore.title')}</h1>
+            <p className="text-white/50 text-lg">{t('explore.subtitle', { count: products.length })}</p>
           </motion.div>
         </div>
       </section>
@@ -99,7 +101,7 @@ export default function ExplorePage() {
       <div className="container mx-auto px-4 py-12">
         {products.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-white/70 text-lg">No hay productos disponibles</p>
+            <p className="text-white/70 text-lg">{t('explore.noProducts')}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -187,7 +189,7 @@ export default function ExplorePage() {
                         className="mt-3 w-full rounded-lg bg-primary text-[#071425] py-2 font-semibold hover:brightness-110 transition flex items-center justify-center gap-2"
                       >
                         <ShoppingCart size={14} />
-                        <span className="text-sm">Agregar</span>
+                        <span className="text-sm">{t('common.add')}</span>
                       </button>
                     </div>
                   </div>

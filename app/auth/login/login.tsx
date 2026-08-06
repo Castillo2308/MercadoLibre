@@ -19,6 +19,7 @@ import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useLanguage } from '@/context/LanguageContext';
 
 export default function Login() {
   const [formMode, setFormMode] = useState<'login' | 'register' | 'reset'>('login');
@@ -34,6 +35,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
   const { login, register } = useAuth();
   const { startLoading } = useNavigationLoader();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect');
@@ -48,7 +50,7 @@ export default function Login() {
     setLoading(true);
     
     if (!email || !password) {
-      setError('Por favor completa todos los campos');
+      setError(t('auth.fillAllFields'));
       setLoading(false);
       return;
     }
@@ -58,7 +60,7 @@ export default function Login() {
       startLoading();
       router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al iniciar sesion');
+      setError(err instanceof Error ? err.message : t('auth.loginError'));
       setLoading(false);
     }
   };
@@ -70,19 +72,19 @@ export default function Login() {
     setLoading(true);
 
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
-      setError('Por favor completa todos los campos');
+      setError(t('auth.fillAllFields'));
       setLoading(false);
       return;
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+      setError(t('auth.passwordMinLength'));
       setLoading(false);
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Las contrasenas no coinciden');
+      setError(t('auth.passwordsMismatch'));
       setLoading(false);
       return;
     }
@@ -106,7 +108,7 @@ export default function Login() {
       startLoading();
       router.push('/auth/login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrarse');
+      setError(err instanceof Error ? err.message : t('auth.registerError'));
       setLoading(false);
     }
   };
@@ -118,7 +120,7 @@ export default function Login() {
     setLoading(true);
 
     if (!email || !password || !confirmPassword) {
-      setError('Por favor completa todos los campos');
+      setError(t('auth.fillAllFields'));
       setLoading(false);
       return;
     }
@@ -133,16 +135,16 @@ export default function Login() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'Error al actualizar la contrasena');
+        throw new Error(payload?.error || t('auth.resetError'));
       }
 
-      setSuccessMessage(payload?.message || 'Contrasena actualizada correctamente');
+      setSuccessMessage(payload?.message || t('auth.passwordUpdated'));
       setPassword('');
       setConfirmPassword('');
       setShowPassword(false);
       setFormMode('login');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al actualizar la contrasena');
+      setError(err instanceof Error ? err.message : t('auth.resetError'));
     } finally {
       setLoading(false);
     }
@@ -165,9 +167,10 @@ export default function Login() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#061321] px-4 py-10 text-white">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(29,184,73,0.22),transparent_34%),radial-gradient(circle_at_85%_22%,rgba(29,184,73,0.14),transparent_38%),linear-gradient(180deg,#061321_0%,#08192d_56%,#0b2137_100%)]" />
+      <div className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(180deg,#061321_0%,#08192d_56%,#0b2137_100%)] dark:block" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_14%_18%,rgba(29,184,73,0.22),transparent_34%),radial-gradient(circle_at_85%_22%,rgba(29,184,73,0.14),transparent_38%)]" />
       <div className="pointer-events-none absolute -top-16 -left-10 h-72 w-72 rounded-full bg-primary/25 blur-3xl animate-floatCard" />
-      <div className="pointer-events-none absolute -bottom-16 -right-12 h-72 w-72 rounded-full bg-secondary/20 blur-3xl animate-floatCard" style={{ animationDelay: '1.2s' }} />
+      <div className="pointer-events-none absolute -bottom-16 -right-12 h-72 w-72 rounded-full bg-blue-400/25 dark:bg-secondary/20 blur-3xl animate-floatCard" style={{ animationDelay: '1.2s' }} />
 
       <motion.div
         initial={{ opacity: 0, y: 18 }}
@@ -180,7 +183,7 @@ export default function Login() {
             <div className="text-6xl font-black text-primary transition-transform duration-300 group-hover:scale-110">💚</div>
             <h1 className="mt-2 text-4xl font-black text-white">Kivra</h1>
           </Link>
-          <p className="mt-2 text-white/70">{isLogin ? 'Bienvenido de vuelta' : 'Unete a nuestra comunidad'}</p>
+          <p className="mt-2 text-white/70">{isLogin ? t('auth.welcomeBack') : t('auth.joinCommunity')}</p>
         </div>
 
         <div className="mb-6 flex gap-3 rounded-xl border border-white/15 bg-white/5 p-1.5 animate-fadeInUp">
@@ -188,21 +191,21 @@ export default function Login() {
             onClick={() => switchMode('login')}
             className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
               isLogin
-                ? 'scale-105 bg-gradient-to-r from-primary to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
+                ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
                 : 'text-white/70 hover:text-white'
             }`}
           >
-            Inicia Sesion
+            {t('auth.loginTab')}
           </button>
           <button
             onClick={() => switchMode('register')}
             className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
               isRegister
-                ? 'scale-105 bg-gradient-to-r from-primary to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
+                ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
                 : 'text-white/70 hover:text-white'
             }`}
           >
-            Registrate
+            {t('auth.registerTab')}
           </button>
         </div>
 
@@ -222,28 +225,28 @@ export default function Login() {
           {isLogin ? (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.email')}</label>
                 <div className="group relative">
                   <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Contrasena</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.password')}</label>
                 <div className="group relative">
                   <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Tu contrasena"
+                    placeholder={t('auth.passwordPlaceholder')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <button
@@ -262,7 +265,7 @@ export default function Login() {
                   onClick={() => switchMode('reset')}
                   className="text-sm font-semibold text-primary transition-colors hover:text-secondary"
                 >
-                  Olvidaste tu contrasena?
+                  {t('auth.forgotPassword')}
                 </button>
               </div>
 
@@ -271,7 +274,7 @@ export default function Login() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
               >
-                {loading ? 'Iniciando sesion...' : 'Inicia Sesion'}
+                {loading ? t('auth.loggingIn') : t('auth.loginTab')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
             </form>
@@ -279,28 +282,28 @@ export default function Login() {
             <form onSubmit={handleRegister} className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/75">Nombre</label>
+                  <label className="block text-sm font-semibold text-white/75">{t('auth.firstName')}</label>
                   <div className="group relative">
                     <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      placeholder="Tu nombre"
+                      placeholder={t('auth.firstNamePlaceholder')}
                       className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/75">Apellidos</label>
+                  <label className="block text-sm font-semibold text-white/75">{t('auth.lastName')}</label>
                   <div className="group relative">
                     <User size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      placeholder="Tus apellidos"
+                      placeholder={t('auth.lastNamePlaceholder')}
                       className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                   </div>
@@ -309,21 +312,21 @@ export default function Login() {
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
+                  <label className="block text-sm font-semibold text-white/75">{t('auth.email')}</label>
                   <div className="group relative">
                     <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                     <input
                       type="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="tu@email.com"
+                      placeholder={t('auth.emailPlaceholder')}
                       className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-white/75">Numero de Celular</label>
+                  <label className="block text-sm font-semibold text-white/75">{t('auth.phone')}</label>
                   <div className="group relative">
                     <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                     <input
@@ -338,14 +341,14 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Contrasena</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.password')}</label>
                 <div className="group relative">
                   <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder={t('auth.passwordMin6')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <button
@@ -359,14 +362,14 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Confirmar Contrasena</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.confirmPassword')}</label>
                 <div className="group relative">
                   <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirma tu contrasena"
+                    placeholder={t('auth.confirmPasswordPlaceholder')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
@@ -377,42 +380,42 @@ export default function Login() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
               >
-                {loading ? 'Creando cuenta...' : 'Crear Cuenta'}
+                {loading ? t('auth.creatingAccount') : t('auth.createAccount')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
 
               <p className="text-center text-sm text-white/70">
-                Al registrarte aceptas nuestros{' '}
+                {t('auth.termsAgree')}{' '}
                 <Link href="#" className="font-bold text-primary transition-colors hover:text-secondary">
-                  Terminos y Condiciones
+                  {t('auth.termsLink')}
                 </Link>
               </p>
             </form>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-6">
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Correo Electronico</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.email')}</label>
                 <div className="group relative">
                   <Mail size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="tu@email.com"
+                    placeholder={t('auth.emailPlaceholder')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Nueva Contrasena</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.newPassword')}</label>
                 <div className="group relative">
                   <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Minimo 6 caracteres"
+                    placeholder={t('auth.passwordMin6')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <button
@@ -426,14 +429,14 @@ export default function Login() {
               </div>
 
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Confirmar Contrasena</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.confirmPassword')}</label>
                 <div className="group relative">
                   <Lock size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repite tu nueva contrasena"
+                    placeholder={t('auth.confirmNewPasswordPlaceholder')}
                     className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 pr-12 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
@@ -444,7 +447,7 @@ export default function Login() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
               >
-                {loading ? 'Actualizando contrasena...' : 'Cambiar Contrasena'}
+                {loading ? t('auth.updatingPassword') : t('auth.changePassword')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
 
@@ -453,7 +456,7 @@ export default function Login() {
                 onClick={() => switchMode('login')}
                 className="w-full rounded-xl border border-white/15 bg-white/5 py-3 font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
               >
-                Volver al inicio de sesion
+                {t('auth.backToLogin')}
               </button>
             </form>
           )}
@@ -463,7 +466,7 @@ export default function Login() {
               <div className="w-full border-t border-white/15" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-[#0c1d31] px-3 font-semibold text-white/60">o continua como</span>
+              <span className="bg-[#0c1d31] px-3 font-semibold text-white/60">{t('auth.orContinueAs')}</span>
             </div>
           </div>
 
@@ -471,18 +474,18 @@ export default function Login() {
             href="/"
             className="block w-full rounded-xl border border-white/20 bg-white/5 py-3 text-center font-bold text-white/85 transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/55 hover:bg-primary/10"
           >
-            Explorar como Invitado
+            {t('auth.exploreAsGuest')}
           </Link>
         </div>
 
         <div className="mt-7 text-center text-sm text-white/70 animate-fadeInUp">
           <p>
-            {isLogin ? 'No tienes cuenta? ' : 'Ya tienes cuenta? '}
+            {isLogin ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
             <button
               onClick={() => switchMode(isLogin ? 'register' : 'login')}
               className="font-bold text-primary hover:text-secondary transition-colors"
             >
-              {isLogin ? 'Registrate aqui' : 'Inicia sesion aqui'}
+              {isLogin ? t('auth.registerHere') : t('auth.loginHere')}
             </button>
           </p>
         </div>

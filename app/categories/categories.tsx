@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
+import { useLanguage } from "@/context/LanguageContext";
 
 type ApiCategory = {
   id: string;
@@ -39,6 +40,7 @@ export default function Categories() {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [products, setProducts] = useState<ApiProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     void (async () => {
@@ -85,14 +87,14 @@ export default function Categories() {
           <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm text-white/80 backdrop-blur mb-6">
               <Sparkles size={14} className="text-primary" />
-              Mas de {categories.reduce((s, c) => s + (c._count?.products || 0), 0).toLocaleString()} productos disponibles
+              {t('categories.availableProducts', { count: categories.reduce((s, c) => s + (c._count?.products || 0), 0).toLocaleString() })}
             </div>
             <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight mb-4">
-              Explorar por
-              <span className="block text-primary">Categorias</span>
+              {t('categories.titleLine1')}
+              <span className="block text-primary">{t('categories.titleLine2')}</span>
             </h1>
             <p className="text-white/55 text-xl max-w-2xl">
-              Encuentra exactamente lo que buscas entre nuestras categorias con productos sincronizados desde la base de datos.
+              {t('categories.subtitle')}
             </p>
           </motion.div>
         </div>
@@ -130,7 +132,7 @@ export default function Categories() {
                         {category.name}
                       </h3>
                       <p className="text-white/50 text-sm mb-5 line-clamp-2 leading-relaxed">
-                        {category._count?.products || 0} articulos disponibles
+                        {t('categories.itemsAvailable', { count: category._count?.products || 0 })}
                       </p>
 
                       <div className="flex items-center gap-3 overflow-hidden">
@@ -151,13 +153,13 @@ export default function Categories() {
                             </div>
                           ))
                         ) : (
-                          <div className="text-xs text-white/40">Sin productos de muestra</div>
+                          <div className="text-xs text-white/40">{t('categories.noSampleProducts')}</div>
                         )}
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-white/10">
                         <p className="text-xs font-medium text-white/35">
-                          {category._count?.products?.toLocaleString() || 0} articulos
+                          {t('categories.itemsCount', { count: category._count?.products?.toLocaleString() || 0 })}
                         </p>
                         <motion.div
                           whileHover={{ x: 4 }}
@@ -185,10 +187,10 @@ export default function Categories() {
           className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12"
         >
           {[
-            { value: '170K+', label: 'Productos activos' },
-            { value: categories.length.toString(), label: 'Categorias' },
-            { value: '98%', label: 'Satisfaccion' },
-            { value: '24h', label: 'Soporte' },
+            { value: '170K+', label: t('categories.statActiveProducts') },
+            { value: categories.length.toString(), label: t('categories.statCategories') },
+            { value: '98%', label: t('categories.statSatisfaction') },
+            { value: '24h', label: t('categories.statSupport') },
           ].map((stat, idx) => (
             <div key={idx} className="rounded-2xl border border-white/10 bg-[#0d1c31] p-5 text-center">
               <p className="text-3xl font-bold text-primary mb-1">{stat.value}</p>
@@ -208,17 +210,17 @@ export default function Categories() {
           <div className="absolute -left-12 -bottom-12 h-48 w-48 rounded-full bg-blue-500/15 blur-3xl" />
           <div className="relative z-10">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              No encuentras lo que buscas?
+              {t('categories.ctaTitle')}
             </h2>
             <p className="text-white/65 text-lg mb-8 max-w-xl mx-auto">
-              Usa nuestra busqueda avanzada con filtros inteligentes para encontrar exactamente lo que necesitas.
+              {t('categories.ctaText')}
             </p>
             <div className="flex gap-4 justify-center flex-wrap">
               <Link href="/search" className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-3 font-semibold text-[#071425] transition hover:brightness-105">
-                Busqueda Avanzada <ArrowRight size={18} />
+                {t('categories.ctaSearch')} <ArrowRight size={18} />
               </Link>
               <Link href="/messages" className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-8 py-3 font-semibold text-white transition hover:bg-white/20">
-                Contactar Soporte
+                {t('categories.ctaSupport')}
               </Link>
             </div>
           </div>
