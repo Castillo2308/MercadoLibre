@@ -62,6 +62,15 @@ interface MyOrder {
   items: { id: string; product: { title: string } }[];
 }
 
+interface MySaleItem {
+  id: string;
+  quantity: number;
+  unitPrice: string | number;
+  subtotal: string | number;
+  product: { id: string; title: string };
+  order: { id: string; orderNumber: string; status: string; createdAt: string };
+}
+
 const ORDER_STATUS_KEYS: Record<string, TranslationKey> = {
   pending: 'profile.orderStatus.pending',
   confirmed: 'profile.orderStatus.confirmed',
@@ -93,6 +102,8 @@ function ProfileContent() {
   const [productsLoaded, setProductsLoaded] = useState(false);
   const [myOrders, setMyOrders] = useState<MyOrder[]>([]);
   const [ordersLoaded, setOrdersLoaded] = useState(false);
+  const [mySales, setMySales] = useState<MySaleItem[]>([]);
+  const [salesLoaded, setSalesLoaded] = useState(false);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -101,6 +112,12 @@ function ProfileContent() {
       .then((data: MyProduct[]) => setMyProducts(Array.isArray(data) ? data : []))
       .catch(() => setMyProducts([]))
       .finally(() => setProductsLoaded(true));
+
+    fetch('/api/users/sales', { headers: { 'X-User-ID': user.id }, cache: 'no-store' })
+      .then((res) => res.json())
+      .then((payload) => setMySales(Array.isArray(payload.data) ? payload.data : []))
+      .catch(() => setMySales([]))
+      .finally(() => setSalesLoaded(true));
 
     fetch('/api/users/orders', { headers: { 'X-User-ID': user.id }, cache: 'no-store' })
       .then((res) => res.json())
@@ -182,6 +199,24 @@ function ProfileContent() {
         .map((p) => ({ label: p.title, value: p.quantitySold })),
     [myProducts]
   );
+
+  const totalRevenue = useMemo(
+    () => mySales.reduce((sum, item) => sum + Number(item.subtotal), 0),
+    [mySales]
+  );
+
+  const salesByMonth = useMemo(() => {
+    const buckets = new Map<string, number>();
+    mySales.forEach((item) => {
+      const date = new Date(item.order.createdAt);
+      if (Number.isNaN(date.getTime())) return;
+      const key = date.toLocaleDateString(locale === 'en' ? 'en-US' : 'es-ES', { month: 'short', year: '2-digit' });
+      buckets.set(key, (buckets.get(key) || 0) + Number(item.subtotal));
+    });
+    return Array.from(buckets.entries())
+      .slice(-6)
+      .map(([label, value]) => ({ label, value }));
+  }, [mySales, locale]);
 
   const inventoryByProduct = useMemo(
     () =>
@@ -337,14 +372,58 @@ function ProfileContent() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6 text-center">
-                    <p className="text-white/70">
-                      {t('profile.sellCta')}
-                    </p>
-                    <Link href="/sell" className="premium-cta mt-4 inline-flex">
-                      <PlusCircle size={18} /> {t('profile.publishProduct')}
-                    </Link>
-                  </div>
+                  {!productsLoaded ? null : myProducts.length === 0 ? (
+                    <div className="rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6 text-center">
+                      <p className="text-white/70">
+                        {t('profile.sellCta')}
+                      </p>
+                      <Link href="/sell" className="premium-cta mt-4 inline-flex">
+                        <PlusCircle size={18} /> {t('profile.publishProduct')}
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="flex items-center gap-2 text-lg font-black text-white">
+                          <ShoppingBag size={20} className="text-secondary" />
+                          Tus productos publicados
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setActiveTab('sales')}
+                            className="text-sm font-semibold text-primary hover:text-secondary"
+                          >
+                            Ver todos
+                          </button>
+                          <Link href="/sell" className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-[#052012] transition hover:brightness-105">
+                            <PlusCircle size={14} /> Publicar otro
+                          </Link>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                        {myProducts.slice(0, 4).map((product) => {
+                          const image = product.images?.[0]?.imageUrl || product.mainImageUrl;
+                          return (
+                            <Link
+                              key={product.id}
+                              href={`/products/${product.id}`}
+                              className="group overflow-hidden rounded-xl border border-white/10 bg-white/5 transition hover:border-white/20"
+                            >
+                              <div className="relative h-24 overflow-hidden bg-white/5">
+                                {image && (
+                                  <SmartImage src={image} alt={product.title} fill sizes="200px" className="object-cover transition-transform duration-300 group-hover:scale-105" />
+                                )}
+                              </div>
+                              <div className="p-2.5">
+                                <p className="truncate text-xs font-semibold text-white">{product.title}</p>
+                                <p className="mt-0.5 text-xs text-primary">{formatCRC(product.price)}</p>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </motion.div>
               )}
 
@@ -480,17 +559,22 @@ function ProfileContent() {
                     </p>
                   </div>
 
-                  {!productsLoaded || !ordersLoaded ? (
+                  {!productsLoaded || !ordersLoaded || !salesLoaded ? (
                     <div className="rounded-2xl border border-white/10 bg-white/5 py-16 text-center text-white/50">
                       {t('profile.loadingMetrics')}
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <DollarSign size={16} className="mb-1 text-primary" />
                           <p className="text-xs text-white/50">{t('profile.totalSpent')}</p>
                           <p className="text-2xl font-black text-white">{formatCRC(totalSpent)}</p>
+                        </div>
+                        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                          <TrendingUp size={16} className="mb-1 text-primary" />
+                          <p className="text-xs text-white/50">Ingresos por ventas</p>
+                          <p className="text-2xl font-black text-primary">{formatCRC(totalRevenue)}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <TrendingUp size={16} className="mb-1 text-secondary" />
@@ -502,21 +586,25 @@ function ProfileContent() {
                           <p className="text-xs text-white/50">{t('profile.totalOrders')}</p>
                           <p className="text-2xl font-black text-white">{myOrders.length}</p>
                         </div>
-                        <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <Package size={16} className="mb-1 text-primary" />
                           <p className="text-xs text-white/50">{t('profile.inventoryValueShort')}</p>
-                          <p className="text-2xl font-black text-primary">{formatCRC(inventoryValue)}</p>
+                          <p className="text-2xl font-black text-white">{formatCRC(inventoryValue)}</p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
+                          <p className="mb-4 text-sm font-semibold text-white">Mis ventas por mes</p>
+                          <MiniBarChart data={salesByMonth} valuePrefix="₡" color="#1DB849" emptyLabel={t('profile.noSalesData')} />
+                        </div>
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.spendingByMonth')}</p>
                           <MiniBarChart data={spendingByMonth} valuePrefix="₡" color="#3B82F6" emptyLabel={t('profile.noSpendingData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.ordersByStatus')}</p>
-                          <MiniDonutChart data={ordersByStatus} emptyLabel={t('profile.noOrdersData')} />
+                          <p className="mb-4 text-sm font-semibold text-white">Mis pedidos por estado</p>
+                          <MiniBarChart data={ordersByStatus} color="#F59E0B" emptyLabel={t('profile.noOrdersData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.topSellingProducts')}</p>
@@ -526,7 +614,7 @@ function ProfileContent() {
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.inventoryByProduct')}</p>
                           <MiniDonutChart data={inventoryByProduct} emptyLabel={t('profile.noInventoryData')} />
                         </div>
-                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 xl:col-span-2">
+                        <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.activeVsInactive')}</p>
                           <MiniDonutChart data={activeVsInactive} emptyLabel={t('profile.noPublishedData')} />
                         </div>

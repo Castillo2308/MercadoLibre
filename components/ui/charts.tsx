@@ -14,6 +14,8 @@ import { motion } from 'framer-motion';
 export interface BarDatum {
   label: string;
   value: number;
+  /** Color opcional por barra; si no se da, se usa el prop `color` del chart. */
+  color?: string;
 }
 
 interface MiniBarChartProps {
@@ -46,7 +48,10 @@ export function MiniBarChart({ data, valuePrefix = '', color = '#1DB849', emptyL
               animate={{ height: `${Math.max(4, (d.value / max) * 100)}%` }}
               transition={{ duration: 0.7, delay: i * 0.06, ease: 'easeOut' }}
               className="w-full rounded-t-lg"
-              style={{ background: `linear-gradient(180deg, ${color}, ${color}88)`, minHeight: 4 }}
+              style={{
+                background: `linear-gradient(180deg, ${d.color || color}, ${d.color || color}88)`,
+                minHeight: 4,
+              }}
             />
           </div>
           <span className="max-w-[72px] truncate text-[10px] uppercase tracking-wide text-white/45" title={d.label}>
