@@ -14,7 +14,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
@@ -22,7 +22,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
 
 export default function Login() {
-  const [formMode, setFormMode] = useState<'login' | 'register' | 'reset'>('login');
+  const [formMode, setFormMode] = useState<'login' | 'register' | 'reset' | '2fa' | 'verify-register'>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,10 +30,12 @@ export default function Login() {
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [twoFaCode, setTwoFaCode] = useState('');
+  const [verifyCode, setVerifyCode] = useState('');
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login, register } = useAuth();
+  const { login, verifyLoginCode, register } = useAuth();
   const { startLoading } = useNavigationLoader();
   const { t } = useLanguage();
   const router = useRouter();
@@ -42,6 +44,20 @@ export default function Login() {
 
   const isLogin = formMode === 'login';
   const isRegister = formMode === 'register';
+  const isTwoFa = formMode === '2fa';
+  const isVerifyRegister = formMode === 'verify-register';
+
+  useEffect(() => {
+    const verify = searchParams.get('verify');
+    if (verify === 'success') {
+      setSuccessMessage('¡Tu cuenta fue verificada! Ya puedes iniciar sesión.');
+    } else if (verify === 'expired') {
+      setError('El enlace de verificación venció. Vuelve a registrarte o inicia sesión para recibir uno nuevo.');
+    } else if (verify === 'invalid' || verify === 'missing' || verify === 'error') {
+      setError('No pudimos verificar tu cuenta con ese enlace. Intenta iniciar sesión.');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,11 +72,72 @@ export default function Login() {
     }
 
     try {
-      await login(email, password);
+      const result = await login(email, password);
+      if (result.requires2FA) {
+        setSuccessMessage('Te enviamos un código de acceso a tu correo. Ingrésalo para continuar.');
+        setFormMode('2fa');
+        setLoading(false);
+        return;
+      }
       startLoading();
       router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.loginError'));
+      setLoading(false);
+    }
+  };
+
+  const handleVerify2FA = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    if (!twoFaCode || twoFaCode.trim().length !== 6) {
+      setError('Ingresa el código de 6 dígitos que te enviamos por correo');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await verifyLoginCode(email, twoFaCode.trim());
+      startLoading();
+      router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código inválido');
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyRegisterCode = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+
+    if (!verifyCode || verifyCode.trim().length !== 6) {
+      setError('Ingresa el código de 6 dígitos que te enviamos por correo');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/verify-code', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code: verifyCode.trim() }),
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || 'Código inválido');
+      }
+
+      setSuccessMessage('¡Cuenta verificada! Ya puedes iniciar sesión.');
+      setFormMode('login');
+      setPassword('');
+      setVerifyCode('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Código inválido');
+    } finally {
       setLoading(false);
     }
   };
@@ -98,15 +175,14 @@ export default function Login() {
         password,
         confirmPassword,
       });
-      setFormMode('login');
-      setEmail('');
+      setSuccessMessage(`Te enviamos un código a ${email}. Ingrésalo para activar tu cuenta (o usa el enlace del correo).`);
+      setFormMode('verify-register');
       setPassword('');
       setFirstName('');
       setLastName('');
       setPhone('');
       setConfirmPassword('');
-      startLoading();
-      router.push('/auth/login');
+      setLoading(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('auth.registerError'));
       setLoading(false);
@@ -150,7 +226,7 @@ export default function Login() {
     }
   };
 
-  const switchMode = (nextMode: 'login' | 'register' | 'reset') => {
+  const switchMode = (nextMode: 'login' | 'register' | 'reset' | '2fa' | 'verify-register') => {
     setError('');
     setSuccessMessage('');
     if (nextMode !== 'reset') {
@@ -161,6 +237,8 @@ export default function Login() {
     setLastName('');
     setPhone('');
     setConfirmPassword('');
+    setTwoFaCode('');
+    setVerifyCode('');
     setShowPassword(false);
     setFormMode(nextMode);
   };
@@ -186,28 +264,30 @@ export default function Login() {
           <p className="mt-2 text-white/70">{isLogin ? t('auth.welcomeBack') : t('auth.joinCommunity')}</p>
         </div>
 
-        <div className="mb-6 flex gap-3 rounded-xl border border-white/15 bg-white/5 p-1.5 animate-fadeInUp">
-          <button
-            onClick={() => switchMode('login')}
-            className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
-              isLogin
-                ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
-                : 'text-white/70 hover:text-white'
-            }`}
-          >
-            {t('auth.loginTab')}
-          </button>
-          <button
-            onClick={() => switchMode('register')}
-            className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
-              isRegister
-                ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
-                : 'text-white/70 hover:text-white'
-            }`}
-          >
-            {t('auth.registerTab')}
-          </button>
-        </div>
+        {!isTwoFa && !isVerifyRegister && (
+          <div className="mb-6 flex gap-3 rounded-xl border border-white/15 bg-white/5 p-1.5 animate-fadeInUp">
+            <button
+              onClick={() => switchMode('login')}
+              className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
+                isLogin
+                  ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              {t('auth.loginTab')}
+            </button>
+            <button
+              onClick={() => switchMode('register')}
+              className={`flex-1 rounded-lg px-4 py-3 text-base font-bold transition-all duration-300 ${
+                isRegister
+                  ? 'scale-105 bg-gradient-to-r from-primary to-primary-dark dark:to-secondary text-[#062012] shadow-[0_10px_24px_rgba(29,184,73,0.4)]'
+                  : 'text-white/70 hover:text-white'
+              }`}
+            >
+              {t('auth.registerTab')}
+            </button>
+          </div>
+        )}
 
         {error && (
           <div className="mb-5 rounded-lg border border-red-400/35 bg-red-500/15 px-4 py-3 text-sm font-semibold text-red-200 animate-fadeInDown">
@@ -222,7 +302,77 @@ export default function Login() {
         )}
 
         <div className="rounded-2xl border border-white/15 bg-[#0c1d31]/85 p-8 shadow-[0_20px_48px_rgba(0,0,0,0.45)] backdrop-blur-md animate-fadeInUp">
-          {isLogin ? (
+          {isTwoFa ? (
+            <form onSubmit={handleVerify2FA} className="space-y-6">
+              <p className="text-center text-sm text-white/70">
+                Enviamos un código de 6 dígitos a <span className="font-semibold text-white">{email}</span>.
+              </p>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Código de acceso</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={twoFaCode}
+                  onChange={(e) => setTwoFaCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-center text-2xl font-black tracking-[0.6em] text-white placeholder:text-white/30 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
+              >
+                {loading ? 'Verificando...' : 'Confirmar código'}
+                <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="w-full rounded-xl border border-white/15 bg-white/5 py-3 font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                {t('auth.backToLogin')}
+              </button>
+            </form>
+          ) : isVerifyRegister ? (
+            <form onSubmit={handleVerifyRegisterCode} className="space-y-6">
+              <p className="text-center text-sm text-white/70">
+                Enviamos un código de 6 dígitos a <span className="font-semibold text-white">{email}</span> para activar tu cuenta.
+              </p>
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-white/75">Código de verificación</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  value={verifyCode}
+                  onChange={(e) => setVerifyCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-center text-2xl font-black tracking-[0.6em] text-white placeholder:text-white/30 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
+              >
+                {loading ? 'Verificando...' : 'Activar cuenta'}
+                <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className="w-full rounded-xl border border-white/15 bg-white/5 py-3 font-semibold text-white/80 transition hover:bg-white/10 hover:text-white"
+              >
+                {t('auth.backToLogin')}
+              </button>
+            </form>
+          ) : isLogin ? (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-white/75">{t('auth.email')}</label>
@@ -479,6 +629,7 @@ export default function Login() {
         </div>
 
         <div className="mt-7 text-center text-sm text-white/70 animate-fadeInUp">
+          {!isTwoFa && !isVerifyRegister && (
           <p>
             {isLogin ? t('auth.noAccount') : t('auth.haveAccount')}{' '}
             <button
@@ -488,6 +639,7 @@ export default function Login() {
               {isLogin ? t('auth.registerHere') : t('auth.loginHere')}
             </button>
           </p>
+          )}
         </div>
       </motion.div>
     </div>

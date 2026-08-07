@@ -48,7 +48,16 @@ model User {
   isActive      Boolean  @default(true)
   isSeller      Boolean  @default(false)
   isBanned      Boolean  @default(false)
-  
+
+  // Verificación de correo (registro): enlace + código de 6 dígitos
+  verificationToken       String?   @unique
+  verificationCode        String?
+  verificationTokenExpiry DateTime?
+
+  // 2FA por correo (login): código de un solo uso
+  twoFactorCode       String?
+  twoFactorCodeExpiry DateTime?
+
   // Timestamps
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

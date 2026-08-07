@@ -8,7 +8,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 import prisma from '@/lib/prisma';
+import { sendVerificationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -64,6 +66,9 @@ export async function POST(request: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationCode = crypto.randomInt(100000, 1000000).toString();
+    const verificationTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
     const user = await prisma.user.create({
       data: {
@@ -74,6 +79,9 @@ export async function POST(request: NextRequest) {
         passwordHash,
         isActive: true,
         isVerified: false,
+        verificationToken,
+        verificationCode,
+        verificationTokenExpiry,
       },
       select: {
         id: true,
@@ -83,6 +91,14 @@ export async function POST(request: NextRequest) {
         phone: true,
       },
     });
+
+    // No bloqueamos el registro si el correo falla; solo lo registramos.
+    sendVerificationEmail({
+      to: user.email,
+      firstName: user.firstName,
+      token: verificationToken,
+      code: verificationCode,
+    }).catch((err) => console.error('Error enviando correo de verificación:', err));
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {

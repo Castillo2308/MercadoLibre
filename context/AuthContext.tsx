@@ -22,7 +22,11 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isAuthReady: boolean;
   user: AuthUser | null;
-  login: (email: string, password: string) => Promise<void>;
+  /** Paso 1: valida credenciales. Si el correo tiene 2FA activo, devuelve requires2FA=true
+   *  y NO autentica todavía — hay que llamar a verifyLoginCode con el código recibido. */
+  login: (email: string, password: string) => Promise<{ requires2FA: boolean }>;
+  /** Paso 2 (solo si login devolvió requires2FA=true): confirma el código y autentica. */
+  verifyLoginCode: (email: string, code: string) => Promise<void>;
   register: (data: {
     firstName: string;
     lastName: string;
@@ -84,6 +88,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error(payload?.error || 'Error al iniciar sesion');
     }
 
+    if (payload.requires2FA) {
+      return { requires2FA: true };
+    }
+
+    const userData = payload.user as AuthUser;
+    setUser(userData);
+    setIsAuthenticated(true);
+    localStorage.setItem('user', JSON.stringify(userData));
+    return { requires2FA: false };
+  }, []);
+
+  const verifyLoginCode = useCallback(async (email: string, code: string) => {
+    if (!email || !code) {
+      throw new Error('Falta el código de verificación');
+    }
+
+    const response = await fetch('/api/auth/login/verify-2fa', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, code }),
+    });
+
+    const payload = await response.json();
+
+    if (!response.ok) {
+      throw new Error(payload?.error || 'Código inválido');
+    }
+
     const userData = payload.user as AuthUser;
     setUser(userData);
     setIsAuthenticated(true);
@@ -123,8 +155,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ isAuthenticated, isAuthReady, user, login, register, logout }),
-    [isAuthenticated, isAuthReady, user, login, register, logout]
+    () => ({ isAuthenticated, isAuthReady, user, login, verifyLoginCode, register, logout }),
+    [isAuthenticated, isAuthReady, user, login, verifyLoginCode, register, logout]
   );
 
   return (
