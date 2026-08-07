@@ -25,6 +25,7 @@ import { useRouter } from "next/navigation";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatCRC } from "@/lib/utils";
 
 type ApiProduct = {
   id: string;
@@ -176,7 +177,7 @@ export default function ExplorePage() {
                       )}
 
                       <div className="mt-auto">
-                        <p className="text-2xl font-bold text-white">${Number(product.price).toFixed(2)}</p>
+                        <p className="text-2xl font-bold text-white">{formatCRC(product.price)}</p>
                       </div>
 
                       <button

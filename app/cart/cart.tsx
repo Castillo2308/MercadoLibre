@@ -42,14 +42,22 @@ import { Separator } from '@/components/ui/separator';
 import { SmartImage } from '@/components/ui/smart-image';
 import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { getDesignIllustration } from '@/lib/design-api';
+import { formatCRC } from '@/lib/utils';
 
 const PAYMENT_METHODS = [
+  {
+    id: 'card' as const,
+    label: 'Tarjeta',
+    description: 'Pago inmediato, tu pedido queda confirmado al instante',
+    tag: 'Pago instantaneo',
+    icon: CreditCard,
+  },
   {
     id: 'sinpe' as const,
     label: 'SINPE Movil',
     description: 'Transferencia instantanea desde tu banco',
-    tag: 'Instantaneo',
-    icon: CreditCard,
+    tag: 'A coordinar',
+    icon: Wallet,
   },
   {
     id: 'cash' as const,
@@ -60,68 +68,103 @@ const PAYMENT_METHODS = [
   },
 ];
 
+type PaymentMethod = (typeof PAYMENT_METHODS)[number]['id'];
+
+function formatCardNumber(value: string) {
+  return value
+    .replace(/\D/g, '')
+    .slice(0, 19)
+    .replace(/(.{4})/g, '$1 ')
+    .trim();
+}
+
+function formatExpiry(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 4);
+  if (digits.length <= 2) return digits;
+  return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+}
+
 function CartContent() {
-  const { cart, updateQuantity, removeFromCart, getTotalItems, getTotalPrice } = useShoppingCart();
+  const { cart, updateQuantity, removeFromCart, getTotalItems, getTotalPrice, clearCart } = useShoppingCart();
   const { user } = useAuth();
   const { t } = useLanguage();
   const { startLoading } = useNavigationLoader();
   const router = useRouter();
-  const [paymentMethod, setPaymentMethod] = useState<'sinpe' | 'cash'>('sinpe');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [isProcessingCheckout, setIsProcessingCheckout] = useState(false);
+  const [shippingAddress, setShippingAddress] = useState('');
+  const [shippingCity, setShippingCity] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
 
   const cartItems = cart;
   const subtotal = getTotalPrice();
-  const shipping = subtotal > 100 ? 0 : 15.99;
-  const tax = subtotal * 0.1;
+  const shipping = subtotal > 50000 ? 0 : 3500;
+  const tax = subtotal * 0.13;
   const total = subtotal + shipping + tax;
 
   const handleProceedToPurchase = async () => {
     if (!user?.id || cartItems.length === 0) return;
 
-    const groupedBySeller = cartItems.reduce<Record<string, typeof cartItems>>((acc, item) => {
-      const sellerKey = item.sellerId || '';
-      if (!sellerKey) return acc;
-      if (!acc[sellerKey]) acc[sellerKey] = [];
-      acc[sellerKey].push(item);
-      return acc;
-    }, {});
-
-    const sellerIds = Object.keys(groupedBySeller);
-    if (sellerIds.length === 0) return;
+    if (paymentMethod === 'card') {
+      if (!cardName.trim()) {
+        toast.error('Escribe el nombre que aparece en la tarjeta');
+        return;
+      }
+      if (cardNumber.replace(/\s/g, '').length < 13) {
+        toast.error('Número de tarjeta inválido');
+        return;
+      }
+      if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
+        toast.error('Fecha de expiración inválida (MM/AA)');
+        return;
+      }
+      if (!/^\d{3,4}$/.test(cardCvv)) {
+        toast.error('CVV inválido');
+        return;
+      }
+    }
 
     setIsProcessingCheckout(true);
     startLoading();
 
     try {
-      for (const sellerId of sellerIds) {
-        const sellerItems = groupedBySeller[sellerId];
-        const lines = sellerItems.map((item) => `- ${item.name} x${item.quantity}`).join('\n');
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-User-ID': user.id,
+        },
+        body: JSON.stringify({
+          shippingAddress,
+          shippingCity,
+          paymentMethod,
+          ...(paymentMethod === 'card'
+            ? { card: { number: cardNumber, name: cardName, expiry: cardExpiry, cvv: cardCvv } }
+            : {}),
+        }),
+      });
 
-        const message = [
-          'Hola, quiero proceder con la compra de estos productos:',
-          lines,
-          '',
-          `Metodo de pago preferido: ${paymentMethod === 'sinpe' ? 'SINPE Movil' : 'Efectivo'}`,
-          'Podemos coordinar entrega personal?',
-        ].join('\n');
+      const payload = await response.json();
 
-        await fetch('/api/messages', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-User-ID': user.id,
-          },
-          body: JSON.stringify({
-            recipientId: sellerId,
-            content: message,
-          }),
-        });
+      if (!response.ok) {
+        throw new Error(payload?.error || 'No se pudo procesar el pedido');
       }
 
-      toast.success('Solicitud enviada al vendedor');
-      router.push(`/messages?user=${encodeURIComponent(sellerIds[0])}`);
-    } catch {
-      toast.error('No se pudo enviar la solicitud, intenta de nuevo');
+      clearCart();
+
+      if (paymentMethod === 'card') {
+        toast.success(`¡Pago exitoso! Pedido ${payload.order.orderNumber} confirmado`);
+        router.push('/profile?tab=purchases');
+      } else {
+        toast.success('Pedido enviado al vendedor para coordinar el pago');
+        const firstSellerId = payload.order?.items?.[0]?.sellerId;
+        router.push(firstSellerId ? `/messages?user=${encodeURIComponent(firstSellerId)}` : '/messages');
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'No se pudo procesar el pedido, intenta de nuevo');
     } finally {
       setIsProcessingCheckout(false);
     }
@@ -170,8 +213,12 @@ function CartContent() {
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
               { label: 'Productos', value: getTotalItems(), icon: ShoppingCart },
-              { label: 'Subtotal', value: `$${subtotal.toFixed(2)}`, icon: Sparkles, accent: true },
-              { label: 'Metodo', value: paymentMethod === 'sinpe' ? 'SINPE Movil' : 'Efectivo', icon: CreditCard },
+              { label: 'Subtotal', value: formatCRC(subtotal), icon: Sparkles, accent: true },
+              {
+                label: 'Metodo',
+                value: PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label || 'Tarjeta',
+                icon: CreditCard,
+              },
             ].map((stat, index) => (
               <motion.div
                 key={stat.label}
@@ -292,7 +339,7 @@ function CartContent() {
                           </span>
                         </div>
                         <p className="max-w-2xl text-sm text-white/60">
-                          {t('cart.unitPrice')} <span className="font-semibold text-white/80">${item.price.toFixed(2)}</span> · {t('cart.chatCoordination')}
+                          {t('cart.unitPrice')} <span className="font-semibold text-white/80">{formatCRC(item.price)}</span> · {t('cart.chatCoordination')}
                         </p>
                       </div>
 
@@ -350,11 +397,11 @@ function CartContent() {
                             transition={{ duration: 0.18 }}
                             className="mt-1 text-3xl font-black text-primary"
                           >
-                            ${(item.price * item.quantity).toFixed(2)}
+                            {formatCRC(item.price * item.quantity)}
                           </motion.p>
                         </AnimatePresence>
                         <p className="text-xs text-white/40 line-through">
-                          ${(item.price * 1.2 * item.quantity).toFixed(2)}
+                          {formatCRC(item.price * 1.2 * item.quantity)}
                         </p>
                       </div>
 
@@ -398,7 +445,7 @@ function CartContent() {
                   <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-white/60">{t('cart.subtotal')}</span>
-                      <span className="text-lg font-bold text-white">${subtotal.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-white">{formatCRC(subtotal)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="flex items-center gap-2 text-white/60">
@@ -406,19 +453,19 @@ function CartContent() {
                         {t('cart.shipping')}
                       </span>
                       <span className={`text-lg font-bold ${shipping === 0 ? 'text-primary' : 'text-white'}`}>
-                        {shipping === 0 ? t('cart.free') : `$${shipping.toFixed(2)}`}
+                        {shipping === 0 ? t('cart.free') : formatCRC(shipping)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-white/60">{t('cart.taxes')}</span>
-                      <span className="text-lg font-bold text-white">${tax.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-white">{formatCRC(tax)}</span>
                     </div>
                   </div>
 
                   <div className="rounded-3xl border border-primary/20 bg-gradient-to-r from-primary/15 via-white/[0.06] to-secondary/15 p-5">
                     <div className="flex items-center justify-between gap-4">
                       <span className="text-lg font-bold text-white">{t('cart.total')}</span>
-                      <span className="text-4xl font-black text-primary">${total.toFixed(2)}</span>
+                      <span className="text-4xl font-black text-primary">{formatCRC(total)}</span>
                     </div>
                     {shipping === 0 ? (
                       <p className="mt-2 text-sm font-semibold text-primary">Envío gratis activado por tu monto actual.</p>
@@ -430,12 +477,12 @@ function CartContent() {
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-semibold text-white">{t('cart.paymentMethod')}</p>
-                      <span className="text-xs text-white/45">Se usa en el mensaje al vendedor</span>
+                      <span className="text-xs text-white/45">Se avisa al vendedor por chat</span>
                     </div>
                     <RadioGroup
                       value={paymentMethod}
-                      onValueChange={(value) => setPaymentMethod(value as 'sinpe' | 'cash')}
-                      className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+                      onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}
+                      className="grid grid-cols-1 gap-3 sm:grid-cols-3"
                     >
                       {PAYMENT_METHODS.map((method) => {
                         const isActive = paymentMethod === method.id;
@@ -483,12 +530,84 @@ function CartContent() {
                     </RadioGroup>
                   </div>
 
+                  <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm font-semibold text-white">Dirección de envío</p>
+                    <input
+                      value={shippingAddress}
+                      onChange={(e) => setShippingAddress(e.target.value)}
+                      placeholder="Dirección exacta (opcional, se puede coordinar por chat)"
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                    />
+                    <input
+                      value={shippingCity}
+                      onChange={(e) => setShippingCity(e.target.value)}
+                      placeholder="Ciudad / provincia"
+                      className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {paymentMethod === 'card' && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-3 overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.06] p-4"
+                      >
+                        <p className="flex items-center gap-2 text-sm font-semibold text-white">
+                          <CreditCard size={16} className="text-primary" /> Datos de la tarjeta
+                        </p>
+                        <input
+                          value={cardNumber}
+                          onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                          placeholder="Número de tarjeta"
+                          inputMode="numeric"
+                          maxLength={23}
+                          className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                        />
+                        <input
+                          value={cardName}
+                          onChange={(e) => setCardName(e.target.value)}
+                          placeholder="Nombre en la tarjeta"
+                          className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                        />
+                        <div className="grid grid-cols-2 gap-3">
+                          <input
+                            value={cardExpiry}
+                            onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                            placeholder="MM/AA"
+                            inputMode="numeric"
+                            maxLength={5}
+                            className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                          />
+                          <input
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                            placeholder="CVV"
+                            inputMode="numeric"
+                            maxLength={4}
+                            className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
+                          />
+                        </div>
+                        <p className="text-[11px] leading-relaxed text-white/45">
+                          Pago simulado de demostración: no se conecta a un banco real ni se guarda tu número de tarjeta completo.
+                        </p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+
                   <Button
                     onClick={handleProceedToPurchase}
                     disabled={isProcessingCheckout}
                     className="premium-cta w-full"
                   >
-                    <span>{isProcessingCheckout ? t('cart.processing') : t('cart.proceed')}</span>
+                    <span>
+                      {isProcessingCheckout
+                        ? t('cart.processing')
+                        : paymentMethod === 'card'
+                        ? `Pagar ${formatCRC(total)}`
+                        : t('cart.proceed')}
+                    </span>
                     <ArrowRight size={20} />
                   </Button>
 

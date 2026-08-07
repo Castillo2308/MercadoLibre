@@ -250,6 +250,10 @@ export async function createOrder(
     shippingState: string;
     shippingPostalCode: string;
     paymentMethod: string;
+    /** 'pending' (coordinar pago) o 'completed' (pagado, ej. con tarjeta) */
+    paymentStatus?: string;
+    /** Estado inicial de la orden; por defecto 'pending' salvo que se indique. */
+    status?: string;
   }
 ) {
   const cart = await getOrCreateCart(userId);
@@ -262,13 +266,13 @@ export async function createOrder(
     throw new Error("Cart is empty");
   }
 
-  // Calcular totales
+  // Calcular totales (montos en colones)
   const subtotal = cartItems.reduce(
     (sum: number, item: (typeof cartItems)[number]) => sum + Number(item.unitPrice) * item.quantity,
     0
   );
-  const tax = subtotal * 0.21; // 21% IVA
-  const shippingCost = subtotal > 100 ? 0 : 10; // Envío gratis > $100
+  const tax = subtotal * 0.13; // 13% IVA Costa Rica
+  const shippingCost = subtotal > 50000 ? 0 : 3500; // Envío gratis sobre ₡50.000
   const totalAmount = subtotal + tax + shippingCost;
 
   // Generar número de orden único
@@ -284,6 +288,8 @@ export async function createOrder(
       shippingState: data.shippingState,
       shippingPostalCode: data.shippingPostalCode,
       paymentMethod: data.paymentMethod,
+      paymentStatus: data.paymentStatus || 'pending',
+      status: data.status || 'pending',
       subtotal: new Decimal(subtotal),
       tax: new Decimal(tax),
       shippingCost: new Decimal(shippingCost),
@@ -300,7 +306,7 @@ export async function createOrder(
         },
       },
     },
-    include: { items: true },
+    include: { items: { include: { product: true, seller: true } } },
   });
 
   // Limpiar carrito
@@ -407,6 +413,7 @@ export async function sendMessage(data: {
   recipientId: string;
   content: string;
   productId?: string;
+  orderId?: string;
 }) {
   return await prisma.message.create({
     data,

@@ -37,6 +37,7 @@ import { useEffect, useState } from 'react';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useLanguage } from '@/context/LanguageContext';
 import { SmartImage } from '@/components/ui/smart-image';
+import { formatCRC } from '@/lib/utils';
 
 interface TrendingProduct {
   id: string;
@@ -222,7 +223,7 @@ export default function Home() {
                 >
                   <p className="text-xs text-white/60">{t('home.mock.leadProduct')}</p>
                   <p className="mt-2 text-xl font-semibold">{t('home.mock.productName')}</p>
-                  <p className="mt-1 font-semibold text-primary">$1,299.99</p>
+                  <p className="mt-1 font-semibold text-primary">{formatCRC(676000)}</p>
                   <div className="mt-4 flex items-center gap-2 text-primary">
                     {[...Array(5)].map((_, idx) => (
                       <Star key={idx} size={14} className="fill-primary" />
@@ -448,7 +449,7 @@ export default function Home() {
                       ))}
                       <span className="text-white/60">{product.reviewCount} {t('home.reviews')}</span>
                     </div>
-                    <p className="mt-3 text-2xl font-semibold text-white">${price.toFixed(2)}</p>
+                    <p className="mt-3 text-2xl font-semibold text-white">{formatCRC(price)}</p>
                   </div>
                 </Link>
               </motion.div>

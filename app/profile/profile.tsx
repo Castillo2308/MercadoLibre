@@ -40,6 +40,7 @@ import { useRouter } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useLanguage } from '@/context/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
+import { formatCRC } from '@/lib/utils';
 
 interface MyProduct {
   id: string;
@@ -383,7 +384,7 @@ function ProfileContent() {
                         </div>
                         <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
                           <p className="text-xs text-white/50">{t('profile.inventoryValue')}</p>
-                          <p className="text-2xl font-black text-primary">${inventoryValue.toFixed(0)}</p>
+                          <p className="text-2xl font-black text-primary">{formatCRC(inventoryValue)}</p>
                         </div>
                       </div>
 
@@ -407,7 +408,7 @@ function ProfileContent() {
                               <div className="p-3">
                                 <p className="truncate text-sm font-semibold text-white">{product.title}</p>
                                 <div className="mt-1 flex items-center justify-between text-xs text-white/50">
-                                  <span>${Number(product.price).toFixed(2)}</span>
+                                  <span>{formatCRC(product.price)}</span>
                                   <span>{product.quantityAvailable} {t('profile.inStock')}</span>
                                 </div>
                               </div>
@@ -457,7 +458,7 @@ function ProfileContent() {
                               <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white/75">
                                 {ORDER_STATUS_KEYS[order.status] ? t(ORDER_STATUS_KEYS[order.status]) : order.status}
                               </span>
-                              <span className="text-lg font-black text-primary">${Number(order.totalAmount).toFixed(2)}</span>
+                              <span className="text-lg font-black text-primary">{formatCRC(order.totalAmount)}</span>
                             </div>
                           </div>
                         </div>
@@ -489,12 +490,12 @@ function ProfileContent() {
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <DollarSign size={16} className="mb-1 text-primary" />
                           <p className="text-xs text-white/50">{t('profile.totalSpent')}</p>
-                          <p className="text-2xl font-black text-white">${totalSpent.toFixed(0)}</p>
+                          <p className="text-2xl font-black text-white">{formatCRC(totalSpent)}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <TrendingUp size={16} className="mb-1 text-secondary" />
                           <p className="text-xs text-white/50">{t('profile.avgTicket')}</p>
-                          <p className="text-2xl font-black text-white">${avgOrderValue.toFixed(0)}</p>
+                          <p className="text-2xl font-black text-white">{formatCRC(avgOrderValue)}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
                           <ShoppingBag size={16} className="mb-1 text-primary" />
@@ -504,14 +505,14 @@ function ProfileContent() {
                         <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
                           <Package size={16} className="mb-1 text-primary" />
                           <p className="text-xs text-white/50">{t('profile.inventoryValueShort')}</p>
-                          <p className="text-2xl font-black text-primary">${inventoryValue.toFixed(0)}</p>
+                          <p className="text-2xl font-black text-primary">{formatCRC(inventoryValue)}</p>
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.spendingByMonth')}</p>
-                          <MiniBarChart data={spendingByMonth} valuePrefix="$" color="#3B82F6" emptyLabel={t('profile.noSpendingData')} />
+                          <MiniBarChart data={spendingByMonth} valuePrefix="₡" color="#3B82F6" emptyLabel={t('profile.noSpendingData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
                           <p className="mb-4 text-sm font-semibold text-white">{t('profile.ordersByStatus')}</p>

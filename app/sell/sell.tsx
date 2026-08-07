@@ -43,6 +43,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/context/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
+import { formatCRC } from '@/lib/utils';
 
 interface ProductForm {
   title: string;
@@ -563,14 +564,14 @@ function SellContent() {
                             {t('sell.priceLabel')}
                           </label>
                           <div className="flex h-12 items-stretch overflow-hidden rounded-2xl border border-white/15 bg-white/5 transition-all duration-300 focus-within:border-primary/60 focus-within:bg-white/[0.07]">
-                            <span className="flex items-center border-r border-white/10 bg-white/5 px-4 font-semibold text-primary">$</span>
+                            <span className="flex items-center border-r border-white/10 bg-white/5 px-4 font-semibold text-primary">₡</span>
                             <Input
                               type="number"
                               name="price"
                               value={formData.price}
                               onChange={handleChange}
-                              placeholder="0.00"
-                              step="0.01"
+                              placeholder="15000"
+                              step="1"
                               className="h-full flex-1 rounded-none border-0 bg-transparent text-white placeholder:text-white/45 focus-visible:ring-0"
                               required
                             />
@@ -735,7 +736,7 @@ function SellContent() {
                       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                         {[
                           { label: t('sell.review.title'), value: formData.title || '—', ok: completed.basics, icon: BadgeCheck },
-                          { label: t('sell.review.price'), value: formData.price ? `$${formData.price}` : '—', ok: completed.pricing, icon: Sparkles },
+                          { label: t('sell.review.price'), value: formData.price ? formatCRC(formData.price) : '—', ok: completed.pricing, icon: Sparkles },
                           { label: t('sell.review.description'), value: formData.description ? t('sell.review.ready') : '—', ok: completed.media, icon: Package },
                           { label: t('sell.review.photos'), value: `${formData.images.length}/5`, ok: formData.images.length > 0, icon: ImagePlus },
                         ].map((item, i) => (
@@ -842,7 +843,7 @@ function SellContent() {
                     </p>
 
                     <div className="mt-4 flex items-end justify-between gap-4">
-                      <p className="text-3xl font-black text-primary">${formData.price || '0.00'}</p>
+                      <p className="text-3xl font-black text-primary">{formData.price ? formatCRC(formData.price) : formatCRC(0)}</p>
                       <div className="flex items-center gap-1 text-primary">
                         {[...Array(5)].map((_, i) => (
                           <Star key={i} size={12} className="fill-primary" />

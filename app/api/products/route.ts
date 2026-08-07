@@ -9,8 +9,6 @@
 
 import { NextResponse, NextRequest } from 'next/server';
 import { randomUUID } from 'crypto';
-import { mkdir, writeFile } from 'fs/promises';
-import path from 'path';
 import prisma from '@/lib/prisma';
 import { getProductPhoto } from '@/lib/design-api';
 
@@ -61,6 +59,7 @@ export async function GET(request: Request) {
 }
 
 const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+const MAX_IMAGE_BYTES = 4 * 1024 * 1024; // 4MB por imagen
 
 export async function POST(request: NextRequest) {
   try {
@@ -97,18 +96,23 @@ export async function POST(request: NextRequest) {
       .getAll('images')
       .filter((entry): entry is File => entry instanceof File && entry.size > 0 && ALLOWED_IMAGE_TYPES.has(entry.type));
 
-    const imageUrls: string[] = [];
-    if (uploadedFiles.length > 0) {
-      const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'products');
-      await mkdir(uploadDir, { recursive: true });
-
-      for (const file of uploadedFiles.slice(0, 5)) {
-        const ext = file.type.split('/')[1] || 'jpg';
-        const filename = `${randomUUID()}.${ext}`;
-        const buffer = Buffer.from(await file.arrayBuffer());
-        await writeFile(path.join(uploadDir, filename), buffer);
-        imageUrls.push(`/uploads/products/${filename}`);
+    for (const file of uploadedFiles) {
+      if (file.size > MAX_IMAGE_BYTES) {
+        return NextResponse.json(
+          { error: 'Cada imagen debe pesar menos de 4MB' },
+          { status: 400 }
+        );
       }
+    }
+
+    // Las funciones serverless de Vercel tienen el sistema de archivos de solo
+    // lectura (salvo /tmp, que no persiste entre invocaciones), así que las
+    // imágenes no se pueden guardar en disco. Se codifican como data URI y se
+    // guardan directo en la base de datos.
+    const imageUrls: string[] = [];
+    for (const file of uploadedFiles.slice(0, 5)) {
+      const buffer = Buffer.from(await file.arrayBuffer());
+      imageUrls.push(`data:${file.type};base64,${buffer.toString('base64')}`);
     }
 
     const sku = `${categorySlug}-${Date.now()}-${randomUUID().slice(0, 6)}`.toUpperCase();

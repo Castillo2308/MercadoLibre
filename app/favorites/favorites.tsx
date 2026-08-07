@@ -25,6 +25,7 @@ import { SmartImage } from '@/components/ui/smart-image';
 import { Badge } from '@/components/ui/badge';
 import toast from 'react-hot-toast';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatCRC } from '@/lib/utils';
 
 const CONDITION_KEYS: Record<string, 'favorites.condition.new' | 'favorites.condition.likeNew' | 'favorites.condition.good' | 'favorites.condition.fair' | 'favorites.condition.refurbished'> = {
   new: 'favorites.condition.new',
@@ -223,9 +224,9 @@ function FavoriteCard({
           <div className="flex items-end justify-between gap-2 pt-1">
             <div>
               <p className="text-xl font-black text-white">
-                {product.price ? `$${product.price.toFixed(2)}` : t('favorites.noPrice')}
+                {product.price ? formatCRC(product.price) : t('favorites.noPrice')}
               </p>
-              {discount > 0 && <p className="text-xs text-white/40 line-through">${product.originalPrice?.toFixed(2)}</p>}
+              {discount > 0 && <p className="text-xs text-white/40 line-through">{formatCRC(product.originalPrice)}</p>}
             </div>
             <button
               onClick={() => onAddToCart(product)}
@@ -271,7 +272,7 @@ export default function Favorites() {
     () => [
       { label: t('favorites.statSaved'), value: wishlist.length },
       { label: t('favorites.statCompare'), value: wishlist.length },
-      { label: t('favorites.statValue'), value: `$${wishlist.reduce((sum, p) => sum + (p.price || 0), 0).toFixed(0)}` },
+      { label: t('favorites.statValue'), value: formatCRC(wishlist.reduce((sum, p) => sum + (p.price || 0), 0)) },
     ],
     [wishlist, t]
   );

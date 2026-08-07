@@ -20,6 +20,7 @@ import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { SmartImage } from '@/components/ui/smart-image';
 import { useLanguage } from '@/context/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
+import { formatCRC } from '@/lib/utils';
 
 const CONDITION_KEYS: Record<string, TranslationKey> = {
   new: 'product.condition.new',
@@ -250,12 +251,12 @@ function ProductDetailComponent({ params }: { params: { id: string } }) {
             <div className="rounded-3xl border border-primary/20 bg-gradient-to-br from-primary/10 to-transparent p-6">
               <p className="mb-2 text-sm text-white/50">{t('product.price')}</p>
               <div className="mb-3 flex flex-wrap items-baseline gap-3">
-                <span className="text-5xl font-black text-white">${price.toFixed(2)}</span>
+                <span className="text-5xl font-black text-white">{formatCRC(price)}</span>
                 {originalPrice && (
                   <>
-                    <span className="text-xl text-white/35 line-through">${originalPrice.toFixed(2)}</span>
+                    <span className="text-xl text-white/35 line-through">{formatCRC(originalPrice)}</span>
                     <span className="rounded-full bg-red-500/90 px-3 py-1 text-xs font-bold text-white">
-                      {t('product.youSave', { amount: (originalPrice - price).toFixed(2) })}
+                      {t('product.youSave', { amount: formatCRC(originalPrice - price) })}
                     </span>
                   </>
                 )}

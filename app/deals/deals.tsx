@@ -19,6 +19,7 @@ import { useState, useEffect } from 'react';
 import { getDesignIllustration } from '@/lib/design-api';
 import { SmartImage } from '@/components/ui/smart-image';
 import { useLanguage } from '@/context/LanguageContext';
+import { formatCRC } from '@/lib/utils';
 
 interface Deal {
   id: string;
@@ -190,10 +191,10 @@ export default function Deals() {
                         </p>
                         <h2 className="mt-3 text-2xl font-black text-white">{deal.name}</h2>
                         <div className="mt-4 flex items-end gap-3">
-                          <span className="text-4xl font-black text-red-400">${deal.discountedPrice.toFixed(2)}</span>
-                          <span className="pb-1 text-base text-white/40 line-through">${deal.originalPrice.toFixed(2)}</span>
+                          <span className="text-4xl font-black text-red-400">{formatCRC(deal.discountedPrice)}</span>
+                          <span className="pb-1 text-base text-white/40 line-through">{formatCRC(deal.originalPrice)}</span>
                         </div>
-                        <p className="mt-1 text-sm font-semibold text-primary">{t('deals.totalSavings')} ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}</p>
+                        <p className="mt-1 text-sm font-semibold text-primary">{t('deals.totalSavings')} {formatCRC(deal.originalPrice - deal.discountedPrice)}</p>
 
                         <div className="mt-5">
                           <div className="mb-2 flex justify-between text-xs text-white/55">
@@ -282,10 +283,10 @@ export default function Deals() {
                       </h3>
 
                       <div className="mb-3">
-                        <p className="text-white/35 text-xs line-through">${deal.originalPrice.toFixed(2)}</p>
-                        <p className="text-2xl font-bold text-red-400">${deal.discountedPrice.toFixed(2)}</p>
+                        <p className="text-white/35 text-xs line-through">{formatCRC(deal.originalPrice)}</p>
+                        <p className="text-2xl font-bold text-red-400">{formatCRC(deal.discountedPrice)}</p>
                         <p className="text-xs text-primary font-semibold">
-                          {t('deals.savings')} ${(deal.originalPrice - deal.discountedPrice).toFixed(2)}
+                          {t('deals.savings')} {formatCRC(deal.originalPrice - deal.discountedPrice)}
                         </p>
                       </div>
 

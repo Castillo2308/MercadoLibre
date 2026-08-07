@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { SmartImage } from "@/components/ui/smart-image";
 import { CardSkeleton } from "@/components/ui/card-skeleton";
 import { useLanguage } from "@/context/LanguageContext";
+import { formatCRC } from "@/lib/utils";
 
 type ApiProduct = {
   id: string;
@@ -74,10 +75,10 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
       results = results.filter((p) => {
         const price = Number(p.price || 0);
         switch (priceRange) {
-          case '0-100': return price <= 100;
-          case '100-500': return price > 100 && price <= 500;
-          case '500-1000': return price > 500 && price <= 1000;
-          case '1000': return price > 1000;
+          case '0-100': return price <= 50000;
+          case '100-500': return price > 50000 && price <= 250000;
+          case '500-1000': return price > 250000 && price <= 500000;
+          case '1000': return price > 500000;
           default: return true;
         }
       });
@@ -135,9 +136,9 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                   <div className="space-y-2">
                     {[
                       { value: 'all', label: t('search.allPrices') },
-                      { value: '0-100', label: '$0 - $100' },
-                      { value: '100-500', label: '$100 - $500' },
-                      { value: '500-1000', label: '$500 - $1,000' },
+                      { value: '0-100', label: '₡0 - ₡50.000' },
+                      { value: '100-500', label: '₡50.000 - ₡250.000' },
+                      { value: '500-1000', label: '₡250.000 - ₡500.000' },
                       { value: '1000', label: t('search.moreThan1000') },
                     ].map((opt) => (
                       <label key={opt.value} className="flex items-center gap-3 cursor-pointer group">
@@ -262,7 +263,7 @@ export default function SearchPage({ searchParams }: { searchParams: { q?: strin
                             </p>
 
                             <div className="mt-auto">
-                              <p className="text-2xl font-bold text-white">${Number(product.price).toFixed(2)}</p>
+                              <p className="text-2xl font-bold text-white">{formatCRC(product.price)}</p>
                             </div>
 
                             <div className="mt-3 rounded-lg bg-primary/10 border border-primary/20 py-1.5 text-xs text-primary font-semibold text-center">
