@@ -87,11 +87,11 @@ export default function Footer() {
           {/* Column 1 - Sobre */}
           <div className="group">
             <h3 className="font-bold text-lg mb-4 text-primary-dark flex items-center gap-2 group-hover:text-primary transition-colors">
-              Sobre Kivra
+              {t('footer.aboutTitle')}
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
             <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
-              {['Quiénes Somos', 'Carreras', 'Prensa', 'Blog'].map((item) => (
+              {[t('footer.about.whoWeAre'), t('footer.about.careers'), t('footer.about.press'), t('footer.about.blog')].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
                     {item}
@@ -105,11 +105,11 @@ export default function Footer() {
           {/* Column 2 - Comprar */}
           <div className="group">
             <h3 className="font-bold text-lg mb-4 text-primary-dark flex items-center gap-2 group-hover:text-primary transition-colors">
-              Comprar
+              {t('footer.buyTitle')}
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
             <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
-              {['Categorías', 'Ofertas', 'Mis Compras', 'Devoluciones'].map((item) => (
+              {[t('footer.buy.categories'), t('footer.buy.deals'), t('footer.buy.myPurchases'), t('footer.buy.returns')].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
                     {item}
@@ -123,11 +123,11 @@ export default function Footer() {
           {/* Column 3 - Vender */}
           <div className="group">
             <h3 className="font-bold text-lg mb-4 text-primary-dark flex items-center gap-2 group-hover:text-primary transition-colors">
-              Vender
+              {t('footer.sellTitle')}
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
             <ul className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
-              {['Registrar Producto', 'Mis Ventas', 'Herramientas', 'Centro de Ayuda'].map((item) => (
+              {[t('footer.sell.registerProduct'), t('footer.sell.mySales'), t('footer.sell.tools'), t('footer.sell.helpCenter')].map((item) => (
                 <li key={item}>
                   <Link href="#" className="hover:text-primary transition-all duration-300 flex items-center gap-2 group">
                     {item}
@@ -141,7 +141,7 @@ export default function Footer() {
           {/* Column 4 - Contacto */}
           <div className="group">
             <h3 className="font-bold text-lg mb-4 text-primary-dark flex items-center gap-2 group-hover:text-primary transition-colors">
-              Contacto
+              {t('footer.contactTitle')}
               <ArrowRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
             <div className={`space-y-3 ${isLightTheme ? 'text-slate-600' : 'text-gray-300'}`}>
