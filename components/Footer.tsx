@@ -162,7 +162,7 @@ export default function Footer() {
 
           {/* Column 5 - Redes Sociales */}
           <div className="group">
-            <h3 className="font-bold text-lg mb-4 text-primary-dark group-hover:text-primary transition-colors">Síguenos</h3>
+            <h3 className="font-bold text-lg mb-4 text-primary-dark group-hover:text-primary transition-colors">{t('footer.followUs')}</h3>
             <div className="flex gap-4 flex-wrap">
               {[
                 { Icon: Facebook, href: '#', label: 'Facebook' },
@@ -191,9 +191,9 @@ export default function Footer() {
             &copy; 2026 Kivra. {t('footer.rights')} ❤️
           </p>
           <div className="flex gap-6 flex-wrap justify-center">
-            <Link href="#" className="hover:text-primary transition-colors duration-300">Privacidad</Link>
-            <Link href="#" className="hover:text-primary transition-colors duration-300">Términos y Condiciones</Link>
-            <Link href="#" className="hover:text-primary transition-colors duration-300">Cookies</Link>
+            <Link href="#" className="hover:text-primary transition-colors duration-300">{t('footer.privacy')}</Link>
+            <Link href="#" className="hover:text-primary transition-colors duration-300">{t('footer.terms')}</Link>
+            <Link href="#" className="hover:text-primary transition-colors duration-300">{t('footer.cookies')}</Link>
           </div>
         </div>
 

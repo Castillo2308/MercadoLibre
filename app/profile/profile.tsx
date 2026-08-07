@@ -391,17 +391,17 @@ function ProfileContent() {
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <h3 className="flex items-center gap-2 text-lg font-black text-white">
                           <ShoppingBag size={20} className="text-secondary" />
-                          Tus productos publicados
+                          {t('profile.myPublishedProducts')}
                         </h3>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setActiveTab('sales')}
                             className="text-sm font-semibold text-primary hover:text-secondary"
                           >
-                            Ver todos
+                            {t('profile.viewAll')}
                           </button>
                           <Link href="/sell" className="flex items-center gap-1.5 rounded-xl bg-primary px-3 py-2 text-xs font-bold text-[#052012] transition hover:brightness-105">
-                            <PlusCircle size={14} /> Publicar otro
+                            <PlusCircle size={14} /> {t('profile.publishAnother')}
                           </Link>
                         </div>
                       </div>
@@ -578,7 +578,7 @@ function ProfileContent() {
                         </div>
                         <div className="rounded-2xl border border-primary/20 bg-primary/10 p-4">
                           <TrendingUp size={16} className="mb-1 text-primary" />
-                          <p className="text-xs text-white/50">Ingresos por ventas</p>
+                          <p className="text-xs text-white/50">{t('profile.revenue')}</p>
                           <p className="text-2xl font-black text-primary">{formatCRC(totalRevenue)}</p>
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -600,7 +600,7 @@ function ProfileContent() {
 
                       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                          <p className="mb-4 text-sm font-semibold text-white">Mis ventas por mes</p>
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.salesByMonth')}</p>
                           <MiniBarChart data={salesByMonth} valuePrefix="₡" color="#1DB849" emptyLabel={t('profile.noSalesData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
@@ -608,7 +608,7 @@ function ProfileContent() {
                           <MiniBarChart data={spendingByMonth} valuePrefix="₡" color="#3B82F6" emptyLabel={t('profile.noSpendingData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                          <p className="mb-4 text-sm font-semibold text-white">Mis pedidos por estado</p>
+                          <p className="mb-4 text-sm font-semibold text-white">{t('profile.ordersByStatusBar')}</p>
                           <MiniBarChart data={ordersByStatus} color="#F59E0B" emptyLabel={t('profile.noOrdersData')} />
                         </div>
                         <div className="rounded-2xl border border-white/10 bg-white/5 p-6">

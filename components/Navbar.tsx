@@ -39,6 +39,7 @@ import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useNavigationLoader } from './NavigationLoaderProvider';
 import Logo from '@/Imagenes/Logo.png';
+import type { TranslationKey } from '@/lib/i18n';
 
 const mainLinks = [
   { href: '/explore', key: 'nav.explore' as const },
@@ -46,35 +47,37 @@ const mainLinks = [
   { href: '/sell', key: 'nav.sell' as const },
 ];
 
-const productMegaMenu = [
-  {
-    title: 'Tecnologia',
-    items: [
-      { icon: '💻', label: 'Laptops y PC', href: '/search?category=laptops-pc' },
-      { icon: '📱', label: 'Celulares', href: '/search?category=celulares' },
-      { icon: '🎮', label: 'Gaming', href: '/search?category=gaming' },
-      { icon: '🎧', label: 'Audio', href: '/search?category=audio' },
-    ],
-  },
-  {
-    title: 'Hogar y estilo',
-    items: [
-      { icon: '🏠', label: 'Hogar', href: '/search?category=hogar' },
-      { icon: '👟', label: 'Moda', href: '/search?category=moda' },
-      { icon: '⌚', label: 'Accesorios', href: '/search?category=accesorios' },
-      { icon: '🧴', label: 'Belleza', href: '/search?category=belleza' },
-    ],
-  },
-  {
-    title: 'Movilidad y deporte',
-    items: [
-      { icon: '🚗', label: 'Movilidad', href: '/search?category=movilidad' },
-      { icon: '🚲', label: 'Ciclismo', href: '/search?category=ciclismo' },
-      { icon: '🏋️', label: 'Fitness', href: '/search?category=fitness' },
-      { icon: '⚽', label: 'Deportes', href: '/search?category=deportes' },
-    ],
-  },
-];
+function getProductMegaMenu(t: (key: TranslationKey) => string) {
+  return [
+    {
+      title: t('nav.megamenu.tech'),
+      items: [
+        { icon: '💻', label: t('nav.category.laptops'), href: '/search?category=laptops-pc' },
+        { icon: '📱', label: t('nav.category.phones'), href: '/search?category=celulares' },
+        { icon: '🎮', label: t('nav.category.gaming'), href: '/search?category=gaming' },
+        { icon: '🎧', label: t('nav.category.audio'), href: '/search?category=audio' },
+      ],
+    },
+    {
+      title: t('nav.megamenu.homeStyle'),
+      items: [
+        { icon: '🏠', label: t('nav.category.home'), href: '/search?category=hogar' },
+        { icon: '👟', label: t('nav.category.fashion'), href: '/search?category=moda' },
+        { icon: '⌚', label: t('nav.category.accessories'), href: '/search?category=accesorios' },
+        { icon: '🧴', label: t('nav.category.beauty'), href: '/search?category=belleza' },
+      ],
+    },
+    {
+      title: t('nav.megamenu.mobilitySports'),
+      items: [
+        { icon: '🚗', label: t('nav.category.mobility'), href: '/search?category=movilidad' },
+        { icon: '🚲', label: t('nav.category.cycling'), href: '/search?category=ciclismo' },
+        { icon: '🏋️', label: t('nav.category.fitness'), href: '/search?category=fitness' },
+        { icon: '⚽', label: t('nav.category.sports'), href: '/search?category=deportes' },
+      ],
+    },
+  ];
+}
 
 function NavbarComponent() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,6 +89,7 @@ function NavbarComponent() {
   const { wishlist } = useWishlist();
   const { theme, toggleTheme } = useTheme();
   const { locale, toggleLocale, t } = useLanguage();
+  const productMegaMenu = useMemo(() => getProductMegaMenu(t), [t]);
   const { startLoading } = useNavigationLoader();
   const router = useRouter();
   const searchInputRef = useRef<HTMLInputElement | null>(null);
@@ -220,18 +224,18 @@ function NavbarComponent() {
                             </div>
 
                             <div className="col-span-3 rounded-2xl border border-white/15 bg-gradient-to-b from-secondary/20 to-primary/15 p-4">
-                              <p className="font-outfit text-xs font-semibold uppercase tracking-[0.24em] text-primary">Destacado</p>
-                              <p className="mt-2 text-lg font-semibold text-white">Tendencias de compra</p>
+                              <p className="font-outfit text-xs font-semibold uppercase tracking-[0.24em] text-primary">{t('nav.featured')}</p>
+                              <p className="mt-2 text-lg font-semibold text-white">{t('nav.trending')}</p>
                               <p className="mt-1 text-xs leading-relaxed text-white/70">
-                                Productos con mayor interes esta semana en la plataforma.
+                                {t('nav.trendingSubtitle')}
                               </p>
 
                               <div className="mt-4 space-y-2">
                                 {[
-                                  '⚡ Celulares premium',
-                                  '🎧 Audio inalambrico',
-                                  '🏠 Smart home',
-                                  '🎮 Consolas y accesorios',
+                                  t('nav.trending.phones'),
+                                  t('nav.trending.audio'),
+                                  t('nav.trending.smartHome'),
+                                  t('nav.trending.consoles'),
                                 ].map((line) => (
                                   <div
                                     key={line}
@@ -246,7 +250,7 @@ function NavbarComponent() {
                                 href="/categories"
                                 className="mt-4 inline-flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-[#071425] transition hover:scale-[1.02] hover:brightness-95"
                               >
-                                Ver todo
+                                {t('nav.viewAll')}
                                 <ChevronDown size={14} className="-rotate-90" />
                               </Link>
                             </div>
@@ -254,12 +258,12 @@ function NavbarComponent() {
 
                         <div className="mt-5 grid grid-cols-2 gap-3">
                           <Link href="/messages" className="group rounded-2xl border border-secondary/30 bg-gradient-to-r from-secondary/20 to-primary/20 p-4 transition hover:-translate-y-0.5 hover:brightness-110">
-                            <p className="font-outfit text-sm font-semibold text-white transition group-hover:text-primary">Mensajería real</p>
-                            <p className="mt-1 text-xs leading-relaxed text-white/70">Chat persistente integrado con base de datos.</p>
+                            <p className="font-outfit text-sm font-semibold text-white transition group-hover:text-primary">{t('nav.messagingReal')}</p>
+                            <p className="mt-1 text-xs leading-relaxed text-white/70">{t('nav.messagingRealDesc')}</p>
                           </Link>
                           <Link href="/sell" className="group rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/20 to-secondary/20 p-4 transition hover:-translate-y-0.5 hover:brightness-110">
-                            <p className="font-outfit text-sm font-semibold text-white transition group-hover:text-primary">Centro de vendedor</p>
-                            <p className="mt-1 text-xs leading-relaxed text-white/70">Publica productos y gestiona tu inventario.</p>
+                            <p className="font-outfit text-sm font-semibold text-white transition group-hover:text-primary">{t('nav.sellerHub')}</p>
+                            <p className="mt-1 text-xs leading-relaxed text-white/70">{t('nav.sellerHubDesc')}</p>
                           </Link>
                         </div>
                         </motion.div>
@@ -294,10 +298,10 @@ function NavbarComponent() {
                     type="button"
                     onClick={() => setIsSearchOpen(true)}
                     className="flex h-full w-full items-center justify-center text-white/85 transition hover:text-white"
-                    aria-label="Abrir buscador"
+                    aria-label={t('nav.openSearch')}
                   >
                     <Search size={17} />
-                    <span className="sr-only">Abrir buscador</span>
+                    <span className="sr-only">{t('nav.openSearch')}</span>
                   </motion.button>
                 ) : (
                   <form
@@ -328,7 +332,7 @@ function NavbarComponent() {
                         setSearchQuery('');
                       }}
                       className="inline-flex h-8 w-8 items-center justify-center rounded-full text-white/60 transition hover:bg-white/10 hover:text-white"
-                      aria-label="Cerrar buscador"
+                      aria-label={t('nav.closeSearch')}
                     >
                       <X size={14} />
                     </button>
@@ -439,7 +443,7 @@ function NavbarComponent() {
               whileTap={{ scale: 0.96 }}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10 text-white md:hidden"
               onClick={() => setIsMobileMenuOpen((prev) => !prev)}
-              aria-label="Abrir menu"
+              aria-label={t('nav.openMenu')}
               type="button"
             >
               <motion.span

@@ -51,11 +51,11 @@ export default function Login() {
   useEffect(() => {
     const verify = searchParams.get('verify');
     if (verify === 'success') {
-      setSuccessMessage('¡Tu cuenta fue verificada! Ya puedes iniciar sesión.');
+      setSuccessMessage(t('auth.accountVerified'));
     } else if (verify === 'expired') {
-      setError('El enlace de verificación venció. Vuelve a registrarte o inicia sesión para recibir uno nuevo.');
+      setError(t('auth.verifyLinkExpired'));
     } else if (verify === 'invalid' || verify === 'missing' || verify === 'error') {
-      setError('No pudimos verificar tu cuenta con ese enlace. Intenta iniciar sesión.');
+      setError(t('auth.verifyLinkInvalid'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -75,7 +75,7 @@ export default function Login() {
     try {
       const result = await login(email, password);
       if (result.requires2FA) {
-        setSuccessMessage('Te enviamos un código de acceso a tu correo. Ingrésalo para continuar.');
+        setSuccessMessage(t('auth.twoFaSent'));
         setFormMode('2fa');
         setLoading(false);
         return;
@@ -94,7 +94,7 @@ export default function Login() {
     setSuccessMessage('');
 
     if (!twoFaCode || twoFaCode.trim().length !== 6) {
-      setError('Ingresa el código de 6 dígitos que te enviamos por correo');
+      setError(t('auth.enterSixDigitCode'));
       return;
     }
 
@@ -104,7 +104,7 @@ export default function Login() {
       startLoading();
       router.push(redirectTo ? decodeURIComponent(redirectTo) : '/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Código inválido');
+      setError(err instanceof Error ? err.message : t('auth.invalidCode'));
       setLoading(false);
     }
   };
@@ -115,7 +115,7 @@ export default function Login() {
     setSuccessMessage('');
 
     if (!verifyCode || verifyCode.trim().length !== 6) {
-      setError('Ingresa el código de 6 dígitos que te enviamos por correo');
+      setError(t('auth.enterSixDigitCode'));
       return;
     }
 
@@ -129,15 +129,15 @@ export default function Login() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'Código inválido');
+        throw new Error(payload?.error || t('auth.invalidCode'));
       }
 
-      setSuccessMessage('¡Cuenta verificada! Ya puedes iniciar sesión.');
+      setSuccessMessage(t('auth.accountVerifiedShort'));
       setFormMode('login');
       setPassword('');
       setVerifyCode('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Código inválido');
+      setError(err instanceof Error ? err.message : t('auth.invalidCode'));
     } finally {
       setLoading(false);
     }
@@ -176,7 +176,7 @@ export default function Login() {
         password,
         confirmPassword,
       });
-      setSuccessMessage(`Te enviamos un código a ${email}. Ingrésalo para activar tu cuenta (o usa el enlace del correo).`);
+      setSuccessMessage(t('auth.registerCodeSent', { email }));
       setFormMode('verify-register');
       setPassword('');
       setFirstName('');
@@ -306,10 +306,10 @@ export default function Login() {
           {isTwoFa ? (
             <form onSubmit={handleVerify2FA} className="space-y-6">
               <p className="text-center text-sm text-white/70">
-                Enviamos un código de 6 dígitos a <span className="font-semibold text-white">{email}</span>.
+                {t('auth.sixDigitSentToEmail', { email })}
               </p>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Código de acceso</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.accessCode')}</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -326,7 +326,7 @@ export default function Login() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
               >
-                {loading ? 'Verificando...' : 'Confirmar código'}
+                {loading ? t('auth.verifying') : t('auth.confirmCode')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
 
@@ -341,10 +341,10 @@ export default function Login() {
           ) : isVerifyRegister ? (
             <form onSubmit={handleVerifyRegisterCode} className="space-y-6">
               <p className="text-center text-sm text-white/70">
-                Enviamos un código de 6 dígitos a <span className="font-semibold text-white">{email}</span> para activar tu cuenta.
+                {t('auth.sixDigitSentToEmailRegister', { email })}
               </p>
               <div className="space-y-2">
-                <label className="block text-sm font-semibold text-white/75">Código de verificación</label>
+                <label className="block text-sm font-semibold text-white/75">{t('auth.verificationCode')}</label>
                 <input
                   type="text"
                   inputMode="numeric"
@@ -361,7 +361,7 @@ export default function Login() {
                 disabled={loading}
                 className="group flex w-full items-center justify-center gap-2 rounded-xl border border-primary/40 bg-gradient-to-r from-[#1ed760] via-[#19c44f] to-[#13b249] py-3 font-bold text-[#052012] shadow-[0_12px_26px_rgba(29,184,73,0.42)] transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 disabled:opacity-70"
               >
-                {loading ? 'Verificando...' : 'Activar cuenta'}
+                {loading ? t('auth.verifying') : t('auth.activateAccount')}
                 <ArrowRight size={20} className="transition-transform duration-300 group-hover:translate-x-1" />
               </button>
 

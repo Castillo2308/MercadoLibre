@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronDown, Search } from 'lucide-react';
 import { COUNTRIES, DEFAULT_COUNTRY, flagEmoji, type Country } from '@/lib/countries';
+import { useLanguage } from '@/context/LanguageContext';
 
 interface PhoneCountryInputProps {
   value: string;
@@ -43,6 +44,7 @@ function parseValue(value: string): { country: Country; local: string } {
 }
 
 export default function PhoneCountryInput({ value, onChange, placeholder }: PhoneCountryInputProps) {
+  const { t } = useLanguage();
   // Solo se parsea el valor inicial al montar; el componente se remonta
   // cada vez que el formulario de registro vuelve a aparecer.
   const initial = useMemo(() => parseValue(value), []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -106,14 +108,14 @@ export default function PhoneCountryInput({ value, onChange, placeholder }: Phon
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar país o código..."
+                placeholder={t('phone.searchPlaceholder')}
                 className="w-full bg-transparent text-sm text-white placeholder:text-white/40 outline-none"
               />
             </div>
           </div>
           <ul className="max-h-56 overflow-y-auto py-1">
             {filtered.length === 0 && (
-              <li className="px-4 py-3 text-sm text-white/50">Sin resultados</li>
+              <li className="px-4 py-3 text-sm text-white/50">{t('phone.noResults')}</li>
             )}
             {filtered.map((c) => (
               <li key={c.iso2}>

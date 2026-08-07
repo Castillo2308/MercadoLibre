@@ -29,10 +29,11 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '@/context/AuthContext';
 import { useLanguage } from '@/context/LanguageContext';
+import type { TranslationKey } from '@/lib/i18n';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { Button } from '@/components/ui/button';
@@ -44,31 +45,33 @@ import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { getDesignIllustration } from '@/lib/design-api';
 import { formatCRC } from '@/lib/utils';
 
-const PAYMENT_METHODS = [
-  {
-    id: 'card' as const,
-    label: 'Tarjeta',
-    description: 'Pago inmediato, tu pedido queda confirmado al instante',
-    tag: 'Pago instantaneo',
-    icon: CreditCard,
-  },
-  {
-    id: 'sinpe' as const,
-    label: 'SINPE Movil',
-    description: 'Transferencia instantanea desde tu banco',
-    tag: 'A coordinar',
-    icon: Wallet,
-  },
-  {
-    id: 'cash' as const,
-    label: 'Efectivo',
-    description: 'Paga en el momento de la entrega',
-    tag: 'Contra entrega',
-    icon: Wallet,
-  },
-];
+function getPaymentMethods(t: (key: TranslationKey) => string) {
+  return [
+    {
+      id: 'card' as const,
+      label: t('cart.payment.card.label'),
+      description: t('cart.payment.card.description'),
+      tag: t('cart.payment.card.tag'),
+      icon: CreditCard,
+    },
+    {
+      id: 'sinpe' as const,
+      label: t('cart.payment.sinpe.label'),
+      description: t('cart.payment.sinpe.description'),
+      tag: t('cart.payment.sinpe.tag'),
+      icon: Wallet,
+    },
+    {
+      id: 'cash' as const,
+      label: t('cart.payment.cash.label'),
+      description: t('cart.payment.cash.description'),
+      tag: t('cart.payment.cash.tag'),
+      icon: Wallet,
+    },
+  ];
+}
 
-type PaymentMethod = (typeof PAYMENT_METHODS)[number]['id'];
+type PaymentMethod = 'card' | 'sinpe' | 'cash';
 
 function formatCardNumber(value: string) {
   return value
@@ -99,6 +102,8 @@ function CartContent() {
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvv, setCardCvv] = useState('');
 
+  const PAYMENT_METHODS = useMemo(() => getPaymentMethods(t), [t]);
+
   const cartItems = cart;
   const subtotal = getTotalPrice();
   const shipping = subtotal > 50000 ? 0 : 3500;
@@ -110,19 +115,19 @@ function CartContent() {
 
     if (paymentMethod === 'card') {
       if (!cardName.trim()) {
-        toast.error('Escribe el nombre que aparece en la tarjeta');
+        toast.error(t('cart.toast.cardNameRequired'));
         return;
       }
       if (cardNumber.replace(/\s/g, '').length < 13) {
-        toast.error('Número de tarjeta inválido');
+        toast.error(t('cart.toast.cardNumberInvalid'));
         return;
       }
       if (!/^\d{2}\/\d{2}$/.test(cardExpiry)) {
-        toast.error('Fecha de expiración inválida (MM/AA)');
+        toast.error(t('cart.toast.cardExpiryInvalid'));
         return;
       }
       if (!/^\d{3,4}$/.test(cardCvv)) {
-        toast.error('CVV inválido');
+        toast.error(t('cart.toast.cardCvvInvalid'));
         return;
       }
     }
@@ -150,21 +155,21 @@ function CartContent() {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload?.error || 'No se pudo procesar el pedido');
+        throw new Error(payload?.error || t('cart.toast.orderError'));
       }
 
       clearCart();
 
       if (paymentMethod === 'card') {
-        toast.success(`¡Pago exitoso! Pedido ${payload.order.orderNumber} confirmado`);
+        toast.success(t('cart.toast.paymentSuccess', { orderNumber: payload.order.orderNumber }));
         router.push('/profile?tab=purchases');
       } else {
-        toast.success('Pedido enviado al vendedor para coordinar el pago');
+        toast.success(t('cart.toast.orderSentToSeller'));
         const firstSellerId = payload.order?.items?.[0]?.sellerId;
         router.push(firstSellerId ? `/messages?user=${encodeURIComponent(firstSellerId)}` : '/messages');
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'No se pudo procesar el pedido, intenta de nuevo');
+      toast.error(err instanceof Error ? err.message : t('cart.toast.orderError'));
     } finally {
       setIsProcessingCheckout(false);
     }
@@ -186,15 +191,15 @@ function CartContent() {
             <div className="flex flex-wrap items-center gap-3">
               <span className="premium-chip">
                 <ShoppingCart size={14} className="text-primary" />
-                Carrito activo
+                {t('cart.badge.active')}
               </span>
               <span className="premium-chip">
                 <Sparkles size={14} className="text-secondary" />
-                Compra asistida
+                {t('cart.badge.assisted')}
               </span>
               <span className="premium-chip">
                 <ShieldCheck size={14} className="text-primary" />
-                Sesion segura
+                {t('cart.badge.secure')}
               </span>
             </div>
 
@@ -212,11 +217,11 @@ function CartContent() {
         {cartItems.length > 0 && (
           <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-3">
             {[
-              { label: 'Productos', value: getTotalItems(), icon: ShoppingCart },
-              { label: 'Subtotal', value: formatCRC(subtotal), icon: Sparkles, accent: true },
+              { label: t('cart.stat.products'), value: getTotalItems(), icon: ShoppingCart },
+              { label: t('cart.subtotal'), value: formatCRC(subtotal), icon: Sparkles, accent: true },
               {
-                label: 'Metodo',
-                value: PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label || 'Tarjeta',
+                label: t('cart.stat.method'),
+                value: PAYMENT_METHODS.find((m) => m.id === paymentMethod)?.label || PAYMENT_METHODS[0].label,
                 icon: CreditCard,
               },
             ].map((stat, index) => (
@@ -411,7 +416,7 @@ function CartContent() {
                           whileTap={{ scale: 0.95 }}
                           onClick={() => {
                             removeFromCart(item.id);
-                            toast.success(`${item.name} eliminado del carrito`);
+                            toast.success(t('cart.toast.itemRemoved', { name: item.name }));
                           }}
                           className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm font-semibold text-red-200 transition hover:bg-red-500/20 hover:text-white"
                         >
@@ -438,7 +443,7 @@ function CartContent() {
                 <div className="h-1 w-full bg-gradient-to-r from-primary via-[#ffd600] to-secondary" />
                 <CardHeader className="space-y-2 border-b border-white/10 bg-white/[0.03]">
                   <CardTitle className="text-2xl font-black text-white">{t('cart.summary')}</CardTitle>
-                  <p className="text-sm text-white/55">Controla el total, el metodo de pago y la salida hacia mensajes.</p>
+                  <p className="text-sm text-white/55">{t('cart.summarySubtitle')}</p>
                 </CardHeader>
 
                 <CardContent className="space-y-6 p-5 md:p-6">
@@ -468,16 +473,16 @@ function CartContent() {
                       <span className="text-4xl font-black text-primary">{formatCRC(total)}</span>
                     </div>
                     {shipping === 0 ? (
-                      <p className="mt-2 text-sm font-semibold text-primary">Envío gratis activado por tu monto actual.</p>
+                      <p className="mt-2 text-sm font-semibold text-primary">{t('cart.freeShippingActive')}</p>
                     ) : (
-                      <p className="mt-2 text-sm text-white/60">Agrega mas productos para desbloquear envío gratis.</p>
+                      <p className="mt-2 text-sm text-white/60">{t('cart.freeShippingHint')}</p>
                     )}
                   </div>
 
                   <div>
                     <div className="mb-3 flex items-center justify-between">
                       <p className="text-sm font-semibold text-white">{t('cart.paymentMethod')}</p>
-                      <span className="text-xs text-white/45">Se avisa al vendedor por chat</span>
+                      <span className="text-xs text-white/45">{t('cart.paymentMethodHint')}</span>
                     </div>
                     <RadioGroup
                       value={paymentMethod}
@@ -531,17 +536,17 @@ function CartContent() {
                   </div>
 
                   <div className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <p className="text-sm font-semibold text-white">Dirección de envío</p>
+                    <p className="text-sm font-semibold text-white">{t('cart.shippingAddress')}</p>
                     <input
                       value={shippingAddress}
                       onChange={(e) => setShippingAddress(e.target.value)}
-                      placeholder="Dirección exacta (opcional, se puede coordinar por chat)"
+                      placeholder={t('cart.shippingAddressPlaceholder')}
                       className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
                     />
                     <input
                       value={shippingCity}
                       onChange={(e) => setShippingCity(e.target.value)}
-                      placeholder="Ciudad / provincia"
+                      placeholder={t('cart.shippingCityPlaceholder')}
                       className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
                     />
                   </div>
@@ -555,12 +560,12 @@ function CartContent() {
                         className="space-y-3 overflow-hidden rounded-2xl border border-primary/25 bg-primary/[0.06] p-4"
                       >
                         <p className="flex items-center gap-2 text-sm font-semibold text-white">
-                          <CreditCard size={16} className="text-primary" /> Datos de la tarjeta
+                          <CreditCard size={16} className="text-primary" /> {t('cart.cardDetails')}
                         </p>
                         <input
                           value={cardNumber}
                           onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
-                          placeholder="Número de tarjeta"
+                          placeholder={t('cart.cardNumberPlaceholder')}
                           inputMode="numeric"
                           maxLength={23}
                           className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
@@ -568,14 +573,14 @@ function CartContent() {
                         <input
                           value={cardName}
                           onChange={(e) => setCardName(e.target.value)}
-                          placeholder="Nombre en la tarjeta"
+                          placeholder={t('cart.cardNamePlaceholder')}
                           className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
                         />
                         <div className="grid grid-cols-2 gap-3">
                           <input
                             value={cardExpiry}
                             onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
-                            placeholder="MM/AA"
+                            placeholder={t('cart.cardExpiryPlaceholder')}
                             inputMode="numeric"
                             maxLength={5}
                             className="w-full rounded-xl border border-white/15 bg-white/5 px-4 py-2.5 text-sm text-white placeholder:text-white/40 outline-none focus:border-primary/60"
@@ -590,7 +595,7 @@ function CartContent() {
                           />
                         </div>
                         <p className="text-[11px] leading-relaxed text-white/45">
-                          Pago simulado de demostración: no se conecta a un banco real ni se guarda tu número de tarjeta completo.
+                          {t('cart.cardDisclaimer')}
                         </p>
                       </motion.div>
                     )}
@@ -605,7 +610,7 @@ function CartContent() {
                       {isProcessingCheckout
                         ? t('cart.processing')
                         : paymentMethod === 'card'
-                        ? `Pagar ${formatCRC(total)}`
+                        ? t('cart.payAmount', { amount: formatCRC(total) })
                         : t('cart.proceed')}
                     </span>
                     <ArrowRight size={20} />
@@ -622,11 +627,11 @@ function CartContent() {
                   <div className="grid gap-3 sm:grid-cols-2">
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
                       <ShieldCheck size={18} className="mx-auto text-primary" />
-                      <p className="mt-2 text-xs font-semibold text-white/70">Compra protegida</p>
+                      <p className="mt-2 text-xs font-semibold text-white/70">{t('cart.protectedPurchase')}</p>
                     </div>
                     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-center">
                       <Truck size={18} className="mx-auto text-secondary" />
-                      <p className="mt-2 text-xs font-semibold text-white/70">Entrega coordinada por chat</p>
+                      <p className="mt-2 text-xs font-semibold text-white/70">{t('cart.chatDelivery')}</p>
                     </div>
                   </div>
                 </CardContent>
