@@ -15,11 +15,12 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Phone } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigationLoader } from '@/components/NavigationLoaderProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useLanguage } from '@/context/LanguageContext';
+import PhoneCountryInput from '@/components/PhoneCountryInput';
 
 export default function Login() {
   const [formMode, setFormMode] = useState<'login' | 'register' | 'reset' | '2fa' | 'verify-register'>('login');
@@ -477,16 +478,7 @@ export default function Login() {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-white/75">{t('auth.phone')}</label>
-                  <div className="group relative">
-                    <Phone size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-primary transition-transform duration-300 group-focus-within:scale-110" />
-                    <input
-                      type="tel"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      placeholder="+34 600 000 000"
-                      className="w-full rounded-xl border border-white/20 bg-white/5 px-12 py-3 text-white placeholder:text-white/45 transition-all duration-300 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                    />
-                  </div>
+                  <PhoneCountryInput value={phone} onChange={setPhone} placeholder="600 000 000" />
                 </div>
               </div>
 
