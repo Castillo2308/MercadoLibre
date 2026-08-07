@@ -92,13 +92,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // No bloqueamos el registro si el correo falla; solo lo registramos.
-    sendVerificationEmail({
-      to: user.email,
-      firstName: user.firstName,
-      token: verificationToken,
-      code: verificationCode,
-    }).catch((err) => console.error('Error enviando correo de verificación:', err));
+    // Se espera el envío (no fire-and-forget): en funciones serverless de Vercel,
+    // una promesa no esperada puede quedar cortada apenas se envía la respuesta,
+    // y el correo nunca llegaría a salir. El registro igual no falla si el correo falla.
+    try {
+      await sendVerificationEmail({
+        to: user.email,
+        firstName: user.firstName,
+        token: verificationToken,
+        code: verificationCode,
+      });
+    } catch (err) {
+      console.error('Error enviando correo de verificación:', err);
+    }
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error) {
