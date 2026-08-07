@@ -36,7 +36,7 @@ import { useShoppingCart } from '@/hooks/useShoppingCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { SmartImage } from '@/components/ui/smart-image';
 import { MiniBarChart, MiniDonutChart } from '@/components/ui/charts';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useLanguage } from '@/context/LanguageContext';
 import type { TranslationKey } from '@/lib/i18n';
@@ -88,10 +88,15 @@ export default function Profile() {
 }
 
 function ProfileContent() {
-  const [activeTab, setActiveTab] = useState('overview');
+  const searchParams = useSearchParams();
+  const VALID_TABS = ['overview', 'sales', 'purchases', 'stats', 'settings'];
+  const initialTab = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    initialTab && VALID_TABS.includes(initialTab) ? initialTab : 'overview'
+  );
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
-  const { t, locale } = useLanguage();
+  const { t, locale, setLocale } = useLanguage();
   const { startLoading } = useNavigationLoader();
   const { clearCart, getTotalItems } = useShoppingCart();
   const { wishlist } = useWishlist();
@@ -657,6 +662,36 @@ function ProfileContent() {
                             }`}
                           >
                             <Sun size={16} /> {t('profile.light')}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-white/10 bg-white/5 p-5">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                          <p className="text-lg font-bold text-white">{t('profile.language')}</p>
+                          <p className="text-sm text-white/65">{t('profile.languageSubtitle')}</p>
+                        </div>
+
+                        <div className="inline-flex rounded-full border border-white/15 bg-white/5 p-1 shadow-[0_10px_22px_rgba(0,0,0,0.18)]">
+                          <button
+                            type="button"
+                            onClick={() => setLocale('es')}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                              locale === 'es' ? 'bg-primary text-[#071425] shadow-[0_8px_18px_rgba(29,184,73,0.28)]' : 'text-white/65 hover:text-white'
+                            }`}
+                          >
+                            🇪🇸 Español
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setLocale('en')}
+                            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold transition-all ${
+                              locale === 'en' ? 'bg-primary text-[#071425] shadow-[0_8px_18px_rgba(29,184,73,0.28)]' : 'text-white/65 hover:text-white'
+                            }`}
+                          >
+                            🇺🇸 English
                           </button>
                         </div>
                       </div>

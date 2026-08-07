@@ -125,6 +125,9 @@ export async function POST(request: NextRequest) {
       paymentMethod === 'card' ? 'Tarjeta (pagado)' : paymentMethod === 'sinpe' ? 'SINPE Móvil' : 'Efectivo';
 
     for (const [sellerId, items] of bySeller) {
+      // Evita mandarse un mensaje a uno mismo si el comprador compró su propio producto.
+      if (sellerId === userId) continue;
+
       const lines = items
         .map((item) => `- ${item.product.title} x${item.quantity} — ₡${Number(item.subtotal).toLocaleString('es-CR')}`)
         .join('\n');

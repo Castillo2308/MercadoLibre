@@ -194,7 +194,7 @@ export default function Messages() {
       if (selectedUserId) {
         fetchMessages(selectedUserId);
       }
-    }, 5000);
+    }, 30000);
 
     return () => window.clearInterval(interval);
   }, [fetchConversations, fetchMessages, isAuthReady, isAuthenticated, selectedUserId, user?.id]);

@@ -21,7 +21,7 @@ export function SmartImage({
   const [loaded, setLoaded] = useState(false);
 
   return (
-    <div className={cn('relative h-full w-full overflow-hidden', wrapperClassName)}>
+    <div className={cn('relative overflow-hidden', fill && 'h-full w-full', wrapperClassName)}>
       {!loaded && (
         <div
           className={cn(
